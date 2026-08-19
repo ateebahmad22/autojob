@@ -76,11 +76,11 @@ def home():
             }
             .nav-link-custom {
                 color: #c5c5d2;
-                padding: 12px 16px;
-                border-radius: 10px;
+                padding: 10px 14px;
+                border-radius: 8px;
                 display: flex;
                 align-items: center;
-                gap: 12px;
+                gap: 10px;
                 font-weight: 500;
                 transition: all .2s;
                 text-decoration: none;
@@ -89,6 +89,30 @@ def home():
             .nav-link-custom:hover, .nav-link-custom.active {
                 background-color: #2a2b32;
                 color: #fff;
+            }
+            .history-item {
+                color: #9ca3af;
+                font-size: 0.82rem;
+                padding: 6px 10px;
+                border-radius: 6px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                transition: background .15s;
+                text-decoration: none;
+            }
+            .history-item:hover, .history-item.active {
+                background-color: #2a2b32;
+                color: #fff;
+            }
+            .history-item .del-btn {
+                opacity: 0;
+                transition: opacity .15s;
+                color: #ef4444;
+            }
+            .history-item:hover .del-btn {
+                opacity: 1;
             }
             /* ── Chat ── */
             .chat-container { max-width: 880px; margin: 0 auto; }
@@ -393,35 +417,51 @@ def home():
         <div class="container-fluid p-0">
             <div class="row g-0">
 
-                <!-- Left Sidebar (Clean 3-Tab Nav with Exit/Signout) -->
-                <div class="col-md-3 col-lg-2 sidebar p-3 d-flex flex-column">
-                    <div class="d-flex align-items-center gap-2 mb-4 px-2">
-                        <i class="bi bi-lightning-charge-fill text-warning fs-3"></i>
+                <!-- Left Sidebar (Clean 3-Tab Nav with Chat History & Exit/Signout) -->
+                <div class="col-md-3 col-lg-2 sidebar p-3 d-flex flex-column" style="height: 100vh; overflow-y: auto;">
+                    <div class="d-flex align-items-center gap-2 mb-3 px-1">
+                        <i class="bi bi-lightning-charge-fill text-warning fs-4"></i>
                         <span class="fw-bold fs-5 text-white">FastApply AI</span>
                     </div>
 
-                    <div class="nav flex-column gap-2 flex-grow-1">
+                    <!-- New Chat Action Button -->
+                    <button onclick="startNewChat()" class="btn btn-outline-light btn-sm w-100 text-start d-flex align-items-center gap-2 mb-3 py-2 px-3 rounded-3" style="font-size:0.85rem;">
+                        <i class="bi bi-plus-lg text-indigo-400"></i> New Search Chat
+                    </button>
+
+                    <div class="nav flex-column gap-1">
                         <a onclick="switchTab('chat')" id="nav-chat" class="nav-link-custom active">
-                            <i class="bi bi-chat-square-text fs-5"></i> AI Assistant
+                            <i class="bi bi-chat-square-text"></i> AI Assistant
                         </a>
                         <a onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-link-custom">
-                            <i class="bi bi-speedometer2 fs-5"></i> Dashboard & Jobs
+                            <i class="bi bi-speedometer2"></i> Dashboard & Jobs
                         </a>
                         <a onclick="switchTab('profile')" id="nav-profile" class="nav-link-custom">
-                            <i class="bi bi-person-gear fs-5"></i> Candidate Profile
+                            <i class="bi bi-person-gear"></i> Candidate Profile
                         </a>
                     </div>
 
+                    <!-- Saved Search Workflows / Chat History List (ChatGPT Style) -->
+                    <div class="mt-3 flex-grow-1 overflow-auto pe-1" style="min-height: 120px;">
+                        <div class="d-flex align-items-center justify-content-between px-2 mb-2 text-secondary" style="font-size: 0.72rem; letter-spacing: 0.5px; text-transform: uppercase;">
+                            <span>Saved Workflows</span>
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <div id="sidebar-chat-history" class="d-flex flex-column gap-1">
+                            <!-- Dynamically loaded chat workflow sessions -->
+                        </div>
+                    </div>
+
                     <!-- User Footer with Exit/Signout Button -->
-                    <div class="pt-3 border-top border-secondary-subtle d-flex align-items-center justify-content-between px-1">
-                        <div class="d-flex align-items-center gap-2 overflow-hidden me-2" style="max-width: 140px;">
-                            <div class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:34px;height:34px;background:#6366f1;font-size:0.85rem;" id="avatar-initials">AA</div>
+                    <div class="pt-3 border-top border-secondary-subtle d-flex align-items-center justify-content-between px-1 mt-auto">
+                        <div class="d-flex align-items-center gap-2 overflow-hidden me-2" style="max-width: 135px;">
+                            <div class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:32px;height:32px;background:#6366f1;font-size:0.8rem;" id="avatar-initials">AA</div>
                             <div class="text-truncate">
                                 <div class="fw-bold text-white small text-truncate" id="sidebar-user-name" title="Candidate">ateebahmad298</div>
-                                <div class="text-secondary micro" style="font-size:.7rem;">Active User</div>
+                                <div class="text-secondary micro" style="font-size:.68rem;">Active User</div>
                             </div>
                         </div>
-                        <button type="button" onclick="doLogout()" class="btn btn-sm btn-link text-danger p-0 text-decoration-none" title="Sign Out & Return to Landing Page" style="font-size: 1.35rem; line-height: 1; cursor: pointer;">
+                        <button type="button" onclick="doLogout()" class="btn btn-sm btn-link text-danger p-0 text-decoration-none" title="Sign Out & Return to Homepage" style="font-size: 1.3rem; line-height: 1; cursor: pointer;">
                             <i class="bi bi-box-arrow-right"></i>
                         </button>
                     </div>
@@ -436,9 +476,12 @@ def home():
                             <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">
                                 <i class="bi bi-circle-fill me-1" style="font-size:8px;"></i> FastApply Engine Live
                             </span>
-                            <span class="text-secondary small d-none d-md-inline">Detailed AI Job Search, Role Breakdown & 1-Click Fast Apply</span>
+                            <span class="text-secondary small d-none d-md-inline" id="chat-title-header">Active Job Workflow</span>
                         </div>
                         <div class="d-flex gap-2">
+                            <button onclick="startNewChat()" class="btn btn-sm btn-outline-light px-3 rounded-pill">
+                                <i class="bi bi-plus-lg me-1"></i> New Chat
+                            </button>
                             <button onclick="switchTab('dashboard')" class="btn btn-sm btn-outline-light px-3 rounded-pill">
                                 <i class="bi bi-speedometer2 me-1"></i> Dashboard
                             </button>
@@ -613,6 +656,127 @@ def home():
             let attachedFiles = [];
             let allApplications = [];
 
+            /* ── Chat Workflows & History State (ChatGPT Style) ── */
+            let currentChatId = 'chat_default';
+            let chatSessions = {};
+
+            function loadStoredChatSessions() {
+                try {
+                    chatSessions = JSON.parse(localStorage.getItem('fa_chat_sessions') || '{}');
+                } catch(e) {
+                    chatSessions = {};
+                }
+                if (Object.keys(chatSessions).length === 0) {
+                    currentChatId = 'chat_default';
+                    chatSessions[currentChatId] = {
+                        title: 'General AI Job Search',
+                        messages: [],
+                        createdAt: 'Today'
+                    };
+                    saveChatSessions();
+                } else if (!chatSessions[currentChatId]) {
+                    currentChatId = Object.keys(chatSessions)[0];
+                }
+            }
+
+            function saveChatSessions() {
+                localStorage.setItem('fa_chat_sessions', JSON.stringify(chatSessions));
+            }
+
+            function startNewChat() {
+                currentChatId = 'chat_' + Date.now();
+                chatSessions[currentChatId] = {
+                    title: 'New Search Workflow',
+                    messages: [],
+                    createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                };
+                saveChatSessions();
+                renderChatSessionMessages();
+                renderSidebarChatHistory();
+                switchTab('chat');
+            }
+
+            function loadChatSession(chatId) {
+                if (chatSessions[chatId]) {
+                    currentChatId = chatId;
+                    renderChatSessionMessages();
+                    renderSidebarChatHistory();
+                    switchTab('chat');
+                }
+            }
+
+            function deleteChatSession(chatId, event) {
+                if (event) event.stopPropagation();
+                delete chatSessions[chatId];
+                saveChatSessions();
+                const keys = Object.keys(chatSessions);
+                if (keys.length > 0) {
+                    currentChatId = keys[0];
+                } else {
+                    startNewChat();
+                    return;
+                }
+                renderChatSessionMessages();
+                renderSidebarChatHistory();
+            }
+
+            function renderSidebarChatHistory() {
+                const container = document.getElementById('sidebar-chat-history');
+                if (!container) return;
+                const keys = Object.keys(chatSessions);
+                if (keys.length === 0) {
+                    container.innerHTML = '<div class="text-secondary small px-2">No past searches yet</div>';
+                    return;
+                }
+
+                container.innerHTML = keys.map(k => {
+                    const sess = chatSessions[k];
+                    const isActive = k === currentChatId ? 'active' : '';
+                    const title = sess.title || 'Job Search Workflow';
+                    return `
+                        <div onclick="loadChatSession('${k}')" class="history-item ${isActive}" title="${title}">
+                            <div class="d-flex align-items-center gap-2 text-truncate">
+                                <i class="bi bi-chat-text text-secondary" style="font-size:0.78rem;"></i>
+                                <span class="text-truncate">${title}</span>
+                            </div>
+                            <span class="del-btn" onclick="deleteChatSession('${k}', event)" title="Delete Workflow">&times;</span>
+                        </div>
+                    `;
+                }).join('');
+
+                const header = document.getElementById('chat-title-header');
+                if (header && chatSessions[currentChatId]) {
+                    header.textContent = chatSessions[currentChatId].title || 'Active Job Workflow';
+                }
+            }
+
+            function renderChatSessionMessages() {
+                const container = document.getElementById('chat-messages');
+                if (!container) return;
+
+                const sess = chatSessions[currentChatId];
+                if (!sess || !sess.messages || sess.messages.length === 0) {
+                    container.innerHTML = `
+                        <div class="chat-bubble-ai">
+                            <div class="d-flex align-items-center gap-2 mb-2" style="color:#818cf8;">
+                                <i class="bi bi-lightning-charge-fill text-warning"></i>
+                                <strong class="small">FastApply AI Assistant</strong>
+                            </div>
+                            <div>Hello! I search live job openings and give you <strong>complete role details</strong> (Job Description, Responsibilities, Tech Stack, Salary Package, HR Email, and Resume Match Score). Ask me anything like:</div>
+                            <ul class="mt-2 mb-0 text-secondary small">
+                                <li><em>"Show 4 detailed Remote Full Stack Developer jobs with salary & HR contacts"</em></li>
+                                <li><em>"Search Senior React Developer roles with required skills"</em></li>
+                                <li><em>"Find Data Analyst jobs with responsibilities and benefits"</em></li>
+                            </ul>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = sess.messages.map(m => m.html).join('');
+                container.scrollTop = container.scrollHeight;
+            }
+
             /* ── Auth & Navigation ── */
             function showPage(p) {
                 ['landing','login','signup','app'].forEach(id => {
@@ -653,6 +817,9 @@ def home():
                 document.getElementById('profile-email-input').value = email || 'ateebahmad298@gmail.com';
                 showPage('app');
                 switchTab('chat');
+                loadStoredChatSessions();
+                renderChatSessionMessages();
+                renderSidebarChatHistory();
                 loadRealApplications();
             }
 
@@ -882,6 +1049,16 @@ def home():
                 document.getElementById('attach-preview').innerHTML = '';
                 container.scrollTop = container.scrollHeight;
 
+                // Save user message in session
+                if (!chatSessions[currentChatId]) {
+                    chatSessions[currentChatId] = { title: promptText.slice(0, 26), messages: [], createdAt: 'Just now' };
+                } else if (chatSessions[currentChatId].messages.length === 0) {
+                    chatSessions[currentChatId].title = promptText.slice(0, 26);
+                }
+                chatSessions[currentChatId].messages.push({ role: 'user', html: userDiv.outerHTML });
+                saveChatSessions();
+                renderSidebarChatHistory();
+
                 // AI processing bubble
                 const aiDiv = document.createElement('div');
                 aiDiv.className = 'chat-bubble-ai';
@@ -1020,6 +1197,12 @@ def home():
                     }
 
                     aiDiv.innerHTML = responseHtml;
+
+                    // Save AI response in session
+                    chatSessions[currentChatId].messages.push({ role: 'ai', html: aiDiv.outerHTML });
+                    saveChatSessions();
+                    renderSidebarChatHistory();
+
                     loadRealApplications();
                 } catch(err) {
                     aiDiv.innerHTML = `<div class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i> ${err.message}</div>`;
