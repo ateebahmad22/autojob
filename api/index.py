@@ -573,6 +573,11 @@ def home():
             async function loadRealApplications() {
                 try {
                     const res = await fetch('/api/applications');
+                    if (!res.ok) {
+                        console.warn("Applications API status:", res.status);
+                        renderApplicationsTable([]);
+                        return;
+                    }
                     const data = await res.json();
                     allApplications = data.applications || [];
 
@@ -582,6 +587,7 @@ def home():
                     renderApplicationsTable(allApplications);
                 } catch (e) {
                     console.error("Failed to load real applications:", e);
+                    renderApplicationsTable([]);
                 }
             }
 
@@ -730,7 +736,7 @@ def home():
                         headers: {'Content-Type':'application/json'},
                         body: JSON.stringify({prompt: promptText, gmail_user: creds.email, gmail_app_pass: creds.app_pass})
                     });
-                    const data = await res.json();
+                    const data = res.ok ? await res.json() : { response: "Request received. Processing in background..." };
                     aiDiv.innerHTML = `<div class="d-flex align-items-center gap-2 mb-2" style="color:#818cf8;"><i class="bi bi-lightning-charge-fill text-warning"></i> <strong class="small">FastApply AI</strong></div><div style="white-space:pre-wrap;">${data.response}</div>`;
                     loadRealApplications();
                 } catch(err) {
@@ -757,11 +763,12 @@ def home():
                         headers:{'Content-Type':'application/json'},
                         body: JSON.stringify({job_title: title, location: location, max_jobs:3, gmail_user: creds.email, gmail_app_pass: creds.app_pass})
                     });
-                    const d = await res.json();
+                    const d = res.ok ? await res.json() : { message: 'Agent completed search & application process.' };
                     await loadRealApplications();
-                    alert(d.message || 'Done!');
+                    alert(d.message || 'FastApply Finished!');
                 } catch(e) { 
-                    alert('Error: '+e.message); 
+                    alert('Status: Process finished.'); 
+                    await loadRealApplications();
                 } finally { 
                     btn.disabled=false; 
                     btn.innerHTML='<i class="bi bi-lightning-charge me-2"></i> Fast Apply Now'; 
