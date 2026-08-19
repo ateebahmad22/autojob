@@ -25,7 +25,7 @@ class AIEmailAgent:
             print("[INFO] GEMINI_API_KEY not set. Using template cold email.")
             return {
                 "subject": f"Application for {job_title} - {company}",
-                "body": f"Hi HR Team,\n\nI am writing to express my strong interest in the {job_title} position at {company}.\n\nAttached/referred is my experience details.\n\nBest regards,"
+                "body": f"Hi HR Team,\n\nI am writing to express my strong interest in the {job_title} position at {company}.\n\nBest regards,"
             }
 
         prompt = f"""
@@ -43,24 +43,29 @@ class AIEmailAgent:
         Keep the subject intriguing and professional. Keep the body concise (150-200 words max), highlighting 2 key skills/achievements directly relevant to the job.
         """
 
-        try:
-            response = self.client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt
-            )
-            raw_text = response.text.replace("```json", "").replace("```", "").strip()
-            return json.loads(raw_text)
-        except Exception as e:
-            print(f"[WARNING] Error in Gemini email generation: {e}")
-            return {
-                "subject": f"Application for {job_title} - {company}",
-                "body": f"Hi HR Team,\n\nI am interested in applying for the {job_title} role at {company}.\n\nBest regards,"
-            }
+        models_to_try = ["gemini-3.6-flash", "gemini-2.5-pro"]
+        
+        for model in models_to_try:
+            try:
+                response = self.client.models.generate_content(
+                    model=model,
+                    contents=prompt
+                )
+                raw_text = response.text.replace("```json", "").replace("```", "").strip()
+                return json.loads(raw_text)
+            except Exception as e:
+                continue
+
+        print("[WARNING] Could not generate via Gemini API, using fallback template.")
+        return {
+            "subject": f"Application for {job_title} - {company}",
+            "body": f"Hi HR Team,\n\nI am interested in applying for the {job_title} role at {company}.\n\nBest regards,"
+        }
 
     def send_cold_email(self, to_email: str, subject: str, body: str) -> bool:
         """Sends cold email via Gmail SMTP using App Password."""
-        if not self.gmail_user or not self.gmail_password:
-            print("[INFO] GMAIL_USER or GMAIL_APP_PASSWORD not set in .env. Skipping email dispatch.")
+        if not self.gmail_user or not self.gmail_password or "your_gmail" in self.gmail_password:
+            print("[INFO] GMAIL_APP_PASSWORD not set in .env. Skipping email dispatch.")
             return False
 
         try:
