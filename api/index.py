@@ -12,7 +12,7 @@ if hasattr(sys.stdout, 'reconfigure'):
 
 from src.resume_parser import extract_resume_text
 from src.browser_agent import JobAutomationAgent
-from src.db import init_db, is_already_applied, log_application
+from src.db import init_db, is_already_applied, log_application, get_all_applications
 from src.config import Config
 
 app = FastAPI(title="FastApply AI")
@@ -21,9 +21,13 @@ class JobRequest(BaseModel):
     job_title: str = "Full Stack Developer"
     location: str = "Remote"
     max_jobs: int = 3
+    gmail_user: str = ""
+    gmail_app_pass: str = ""
 
 class ChatRequest(BaseModel):
     prompt: str
+    gmail_user: str = ""
+    gmail_app_pass: str = ""
 
 @app.get("/", response_class=HTMLResponse)
 def home():
@@ -63,8 +67,8 @@ def home():
             }
             .nav-link-custom {
                 color: #c5c5d2;
-                padding: 10px 14px;
-                border-radius: 8px;
+                padding: 12px 16px;
+                border-radius: 10px;
                 display: flex;
                 align-items: center;
                 gap: 12px;
@@ -78,7 +82,7 @@ def home():
                 color: #fff;
             }
             /* ── Chat ── */
-            .chat-container { max-width: 800px; margin: 0 auto; }
+            .chat-container { max-width: 850px; margin: 0 auto; }
             .chat-bubble-user {
                 background: #2f2f2f;
                 border-radius: 18px 18px 4px 18px;
@@ -140,7 +144,7 @@ def home():
                 flex-shrink: 0;
             }
             .prompt-area .send-btn:hover { background: var(--accent-hover); }
-            /* ── Cards ── */
+            /* ── Cards & Tables ── */
             .card-custom {
                 background: var(--card);
                 border: 1px solid var(--border);
@@ -169,7 +173,7 @@ def home():
                 border-radius: 16px;
                 padding: 40px;
                 width: 100%;
-                max-width: 420px;
+                max-width: 440px;
             }
             .auth-card .form-control {
                 background: var(--input-bg);
@@ -188,7 +192,6 @@ def home():
                 border-radius: 10px;
                 border: 1px solid var(--border);
             }
-            /* media attachment chip */
             .attach-chip {
                 display: inline-flex;
                 align-items: center;
@@ -226,8 +229,13 @@ def home():
                         <input type="email" id="login-email" class="form-control" placeholder="you@example.com" required>
                     </div>
                     <div class="mb-3 text-start">
-                        <label class="form-label text-secondary small">Password</label>
+                        <label class="form-label text-secondary small">Account Password</label>
                         <input type="password" id="login-pass" class="form-control" placeholder="Enter your password" required>
+                    </div>
+                    <div class="mb-3 text-start">
+                        <label class="form-label text-secondary small">Gmail App Password</label>
+                        <input type="password" id="login-app-pass" class="form-control" placeholder="xxxx xxxx xxxx xxxx" required>
+                        <div class="form-text text-secondary" style="font-size:.7rem;">Used to send cold emails to HR from your Gmail</div>
                     </div>
                     <button type="submit" class="btn btn-accent w-100 py-2 mt-2 fw-semibold">
                         <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
@@ -244,8 +252,8 @@ def home():
             <div class="auth-card text-center">
                 <div class="mb-4">
                     <i class="bi bi-lightning-charge-fill text-warning fs-1"></i>
-                    <h3 class="fw-bold text-white mt-2">Create your FastApply AI account</h3>
-                    <p class="text-secondary small">Set up your profile and start auto-applying in minutes</p>
+                    <h3 class="fw-bold text-white mt-2">Create FastApply AI Account</h3>
+                    <p class="text-secondary small">Set up your profile and start auto-applying</p>
                 </div>
                 <form onsubmit="doSignup(event)">
                     <div class="mb-3 text-start">
@@ -257,12 +265,19 @@ def home():
                         <input type="email" id="signup-email" class="form-control" placeholder="you@example.com" required>
                     </div>
                     <div class="mb-3 text-start">
-                        <label class="form-label text-secondary small">Password</label>
+                        <label class="form-label text-secondary small">Account Password</label>
                         <input type="password" id="signup-pass" class="form-control" placeholder="Min 6 characters" required minlength="6">
                     </div>
                     <div class="mb-3 text-start">
                         <label class="form-label text-secondary small">Confirm Password</label>
                         <input type="password" id="signup-pass2" class="form-control" placeholder="Re-enter password" required>
+                    </div>
+                    <hr class="border-secondary my-3">
+                    <p class="text-secondary small text-start mb-2"><i class="bi bi-envelope-at me-1"></i> Cold emails will be sent from this Gmail</p>
+                    <div class="mb-3 text-start">
+                        <label class="form-label text-secondary small">Gmail App Password <span class="text-danger">*</span></label>
+                        <input type="password" id="signup-app-pass" class="form-control" placeholder="xxxx xxxx xxxx xxxx" required>
+                        <div class="form-text text-secondary" style="font-size:.7rem;">Google Account &gt; Security &gt; 2-Step Verification &gt; App Passwords</div>
                     </div>
                     <button type="submit" class="btn btn-accent w-100 py-2 mt-2 fw-semibold">
                         <i class="bi bi-person-plus me-2"></i> Create Account
@@ -274,38 +289,33 @@ def home():
             </div>
         </div>
 
-        <!-- ═══════════ MAIN APP (post-auth) ═══════════ -->
+        <!-- ═══════════ MAIN APP ═══════════ -->
         <div id="page-app" class="d-none">
         <div class="container-fluid p-0">
             <div class="row g-0">
 
-                <!-- Left Sidebar -->
+                <!-- Left Sidebar (Home and Signout removed) -->
                 <div class="col-md-3 col-lg-2 sidebar p-3 d-flex flex-column">
                     <div class="d-flex align-items-center gap-2 mb-4 px-2">
                         <i class="bi bi-lightning-charge-fill text-warning fs-3"></i>
                         <span class="fw-bold fs-5 text-white">FastApply AI</span>
                     </div>
 
-                    <div class="nav flex-column gap-1 flex-grow-1">
-                        <a onclick="switchTab('landing')" id="nav-landing" class="nav-link-custom active">
-                            <i class="bi bi-house"></i> Home
-                        </a>
-                        <a onclick="switchTab('chat')" id="nav-chat" class="nav-link-custom">
-                            <i class="bi bi-chat-square-text"></i> AI Assistant
+                    <!-- Navigation Links: Only AI Assistant, Dashboard & Jobs, Candidate Profile -->
+                    <div class="nav flex-column gap-2 flex-grow-1">
+                        <a onclick="switchTab('chat')" id="nav-chat" class="nav-link-custom active">
+                            <i class="bi bi-chat-square-text fs-5"></i> AI Assistant
                         </a>
                         <a onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-link-custom">
-                            <i class="bi bi-speedometer2"></i> Dashboard & Jobs
+                            <i class="bi bi-speedometer2 fs-5"></i> Dashboard & Jobs
                         </a>
                         <a onclick="switchTab('profile')" id="nav-profile" class="nav-link-custom">
-                            <i class="bi bi-person-gear"></i> Candidate Profile
-                        </a>
-                        <a onclick="doLogout()" id="nav-signout" class="nav-link-custom mt-auto" style="color:#f87171;">
-                            <i class="bi bi-box-arrow-left"></i> Sign Out
+                            <i class="bi bi-person-gear fs-5"></i> Candidate Profile
                         </a>
                     </div>
 
                     <!-- User Footer -->
-                    <div class="pt-3 border-top border-secondary-subtle d-flex align-items-center justify-content-between px-1">
+                    <div class="pt-3 border-top border-secondary-subtle d-flex align-items-center px-1">
                         <div class="d-flex align-items-center gap-2">
                             <div class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold" style="width:36px;height:36px;background:#6366f1;" id="avatar-initials">AA</div>
                             <div>
@@ -313,9 +323,6 @@ def home():
                                 <div class="text-secondary" style="font-size:.72rem;">Full Stack Dev</div>
                             </div>
                         </div>
-                        <button onclick="doLogout()" class="btn btn-sm btn-link text-secondary p-0" title="Logout">
-                            <i class="bi bi-box-arrow-right fs-5"></i>
-                        </button>
                     </div>
                 </div>
 
@@ -328,59 +335,20 @@ def home():
                             <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">
                                 <i class="bi bi-circle-fill me-1" style="font-size:8px;"></i> FastApply Engine Live
                             </span>
-                            <span class="text-secondary small">Vercel Serverless + Playwright Automation</span>
+                            <span class="text-secondary small d-none d-md-inline">Vercel Serverless + Playwright Web Scraper & Cold Mailer</span>
                         </div>
-                        <button onclick="switchTab('chat')" class="btn btn-sm btn-accent px-3 rounded-pill">Open AI Assistant</button>
-                    </div>
-
-                    <!-- ══ TAB: LANDING ══ -->
-                    <div id="tab-landing" class="p-4 p-md-5 flex-grow-1">
-                        <div class="text-center py-5 mx-auto" style="max-width:800px;">
-                            <span class="badge rounded-pill px-3 py-2 mb-3" style="color:#818cf8;border:1px solid #4338ca;">
-                                ⚡ FastApply AI — Autonomous Application Platform
-                            </span>
-                            <h1 class="display-4 fw-bold mb-4 text-white">
-                                Land Jobs 10x Faster with <span style="color:#818cf8;">FastApply AI</span>
-                            </h1>
-                            <p class="lead text-secondary mb-5 mx-auto" style="max-width:680px;">
-                                FastApply AI reads your resume, crawls top job portals, extracts recruiter emails, writes hyper-personalized cold emails using Gemini 3.6 AI, and dispatches them straight from your Gmail.
-                            </p>
-                            <div class="d-flex justify-content-center gap-3 flex-wrap">
-                                <button onclick="switchTab('chat')" class="btn btn-accent btn-lg px-4 py-3 shadow">
-                                    <i class="bi bi-robot me-2"></i> Launch AI Assistant
-                                </button>
-                                <button onclick="switchTab('dashboard')" class="btn btn-outline-light btn-lg px-4 py-3">
-                                    <i class="bi bi-bar-chart-line me-2"></i> View Dashboard
-                                </button>
-                            </div>
-                        </div>
-                        <div class="row g-4 mt-4">
-                            <div class="col-md-4">
-                                <div class="card-custom p-4 h-100">
-                                    <i class="bi bi-file-earmark-person fs-1 mb-3" style="color:#818cf8;"></i>
-                                    <h4 class="fw-bold text-white mb-2">Smart Resume Reader</h4>
-                                    <p class="text-secondary small">Extracts skills, experience, and contact info from .docx and .pdf resumes automatically.</p>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card-custom p-4 h-100">
-                                    <i class="bi bi-cpu fs-1 text-success mb-3"></i>
-                                    <h4 class="fw-bold text-white mb-2">Gemini 3.6 Flash AI</h4>
-                                    <p class="text-secondary small">Generates hyper-personalized cold emails targeting specific job requirements and company missions.</p>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card-custom p-4 h-100">
-                                    <i class="bi bi-send-check fs-1 text-info mb-3"></i>
-                                    <h4 class="fw-bold text-white mb-2">Direct Gmail Dispatch</h4>
-                                    <p class="text-secondary small">Sends cold emails directly from your Gmail with automatic SQLite duplicate tracking.</p>
-                                </div>
-                            </div>
+                        <div class="d-flex gap-2">
+                            <button onclick="switchTab('dashboard')" class="btn btn-sm btn-outline-light px-3 rounded-pill">
+                                <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                            </button>
+                            <button onclick="switchTab('chat')" class="btn btn-sm btn-accent px-3 rounded-pill">
+                                <i class="bi bi-chat-dots me-1"></i> AI Assistant
+                            </button>
                         </div>
                     </div>
 
-                    <!-- ══ TAB: AI ASSISTANT (with media upload) ══ -->
-                    <div id="tab-chat" class="d-none flex-grow-1 d-flex flex-column p-4">
+                    <!-- ══ TAB 1: AI ASSISTANT (with media upload) ══ -->
+                    <div id="tab-chat" class="flex-grow-1 d-flex flex-column p-4">
                         <div class="chat-container flex-grow-1 w-100 d-flex flex-column">
                             <div id="chat-messages" class="flex-grow-1 overflow-auto pe-2 mb-4 d-flex flex-column gap-3" style="max-height:65vh;">
                                 <div class="chat-bubble-ai">
@@ -388,11 +356,11 @@ def home():
                                         <i class="bi bi-lightning-charge-fill text-warning"></i>
                                         <strong class="small">FastApply AI Assistant</strong>
                                     </div>
-                                    <div>Hello! I'm your AI Assistant. You can ask me anything or attach files like resumes, screenshots, or documents. Try:</div>
+                                    <div>Hello! I'm your AI Job Application Assistant. Give me any command to find jobs, write cold emails, or run automatic applications:</div>
                                     <ul class="mt-2 mb-0 text-secondary small">
-                                        <li><em>"Fast apply to 5 Remote Full Stack Developer jobs"</em></li>
-                                        <li><em>"Draft a cold email for a Senior MERN role"</em></li>
-                                        <li><em>"Analyze the attached resume and suggest improvements"</em></li>
+                                        <li><em>"Find 5 Remote Full Stack Developer jobs and apply"</em></li>
+                                        <li><em>"Search React Developer openings in Bangalore"</em></li>
+                                        <li><em>"Draft a personalized cold email for a Senior MERN role"</em></li>
                                     </ul>
                                 </div>
                             </div>
@@ -403,13 +371,13 @@ def home():
                             <!-- Input box with media upload -->
                             <div class="prompt-area">
                                 <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt" multiple hidden onchange="handleFileSelect(event)">
-                                <button class="icon-btn" onclick="document.getElementById('fileInput').click()" title="Attach file or image">
+                                <button class="icon-btn" onclick="document.getElementById('fileInput').click()" title="Attach file (PDF/Doc/TXT)">
                                     <i class="bi bi-paperclip"></i>
                                 </button>
                                 <button class="icon-btn" onclick="document.getElementById('fileInput').click()" title="Upload image">
                                     <i class="bi bi-image"></i>
                                 </button>
-                                <textarea id="promptInput" rows="1" placeholder="Message FastApply AI..." oninput="autoGrow(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage();}"></textarea>
+                                <textarea id="promptInput" rows="1" placeholder="Ask AI Assistant to find & apply jobs... (e.g. Apply 3 React Remote jobs)" oninput="autoGrow(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage();}"></textarea>
                                 <button class="send-btn" onclick="sendChatMessage()" title="Send">
                                     <i class="bi bi-arrow-up"></i>
                                 </button>
@@ -417,24 +385,56 @@ def home():
                         </div>
                     </div>
 
-                    <!-- ══ TAB: DASHBOARD ══ -->
+                    <!-- ══ TAB 2: DASHBOARD & REAL JOBS ══ -->
                     <div id="tab-dashboard" class="d-none p-4 p-md-5 flex-grow-1">
-                        <h2 class="fw-bold text-white mb-4"><i class="bi bi-speedometer2 me-2"></i> Application Analytics</h2>
-                        <div class="row g-4 mb-4">
-                            <div class="col-md-3"><div class="card-custom p-4"><div class="text-secondary small fw-semibold">Total Jobs</div><div class="stat-badge text-white mt-2">12</div></div></div>
-                            <div class="col-md-3"><div class="card-custom p-4"><div class="text-secondary small fw-semibold">Emails Sent</div><div class="stat-badge text-success mt-2">4</div></div></div>
-                            <div class="col-md-3"><div class="card-custom p-4"><div class="text-secondary small fw-semibold">Match Rate</div><div class="stat-badge mt-2" style="color:#818cf8;">98%</div></div></div>
-                            <div class="col-md-3"><div class="card-custom p-4"><div class="text-secondary small fw-semibold">Engine</div><div class="fs-4 fw-bold text-success mt-2">Active</div></div></div>
+                        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                            <div>
+                                <h2 class="fw-bold text-white mb-1"><i class="bi bi-speedometer2 me-2"></i> Dashboard & Applied Jobs</h2>
+                                <p class="text-secondary small mb-0">Live real-time data of all scraped jobs, portals, and HR cold emails sent.</p>
+                            </div>
+                            <button onclick="loadRealApplications()" class="btn btn-outline-light btn-sm rounded-pill px-3">
+                                <i class="bi bi-arrow-clockwise me-1"></i> Refresh Live Data
+                            </button>
                         </div>
+
+                        <!-- Real Metrics Row -->
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-3">
+                                <div class="card-custom p-4">
+                                    <div class="text-secondary small fw-semibold">Total Jobs Processed</div>
+                                    <div class="stat-badge text-white mt-2" id="stat-total">0</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card-custom p-4">
+                                    <div class="text-secondary small fw-semibold">Cold Emails Sent</div>
+                                    <div class="stat-badge text-success mt-2" id="stat-emails">0</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card-custom p-4">
+                                    <div class="text-secondary small fw-semibold">FastApply Rate</div>
+                                    <div class="stat-badge mt-2" style="color:#818cf8;" id="stat-rate">98%</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card-custom p-4">
+                                    <div class="text-secondary small fw-semibold">Agent Engine</div>
+                                    <div class="fs-4 fw-bold text-success mt-2" id="stat-engine">Live & Ready</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Automation Trigger -->
                         <div class="card-custom p-4 mb-4">
-                            <h4 class="fw-bold text-white mb-3"><i class="bi bi-play-circle me-2"></i> Quick FastApply</h4>
+                            <h4 class="fw-bold text-white mb-3"><i class="bi bi-play-circle me-2"></i> Search & Apply for Jobs</h4>
                             <div class="row g-3">
                                 <div class="col-md-4">
-                                    <label class="form-label text-secondary small">Target Role</label>
+                                    <label class="form-label text-secondary small">Target Role / Keyword</label>
                                     <input type="text" id="dash-title" class="form-control" value="Full Stack Developer">
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label text-secondary small">Location</label>
+                                    <label class="form-label text-secondary small">Location Preference</label>
                                     <input type="text" id="dash-location" class="form-control" value="Remote">
                                 </div>
                                 <div class="col-md-4 d-flex align-items-end">
@@ -444,30 +444,58 @@ def home():
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Real Applications Table -->
                         <div class="card-custom p-4">
-                            <h4 class="fw-bold text-white mb-3">Recent Applications</h4>
+                            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                <h4 class="fw-bold text-white mb-0">Real Job Application Records</h4>
+                                <div style="max-width: 320px;" class="w-100">
+                                    <input type="text" id="jobSearchInput" class="form-control form-control-sm" placeholder="Filter jobs by title, company, email..." oninput="filterJobsTable()">
+                                </div>
+                            </div>
                             <div class="table-responsive">
                                 <table class="table table-dark table-hover align-middle mb-0">
-                                    <thead><tr class="text-secondary border-secondary"><th>Role</th><th>Portal</th><th>HR Email</th><th>Status</th><th>Date</th></tr></thead>
+                                    <thead>
+                                        <tr class="text-secondary border-secondary">
+                                            <th>Role</th>
+                                            <th>Company / Title</th>
+                                            <th>Job Link / Portal</th>
+                                            <th>HR Contact Email</th>
+                                            <th>Status</th>
+                                            <th>Applied Date</th>
+                                        </tr>
+                                    </thead>
                                     <tbody id="jobs-table-body">
-                                        <tr><td>Full Stack Developer</td><td><a href="#" style="color:#818cf8;">Indeed</a></td><td>hr@company.com</td><td><span class="badge bg-success">Email Sent</span></td><td>Just now</td></tr>
-                                        <tr><td>React Node Developer</td><td><a href="#" style="color:#818cf8;">Remote.co</a></td><td>jobs@remote.co</td><td><span class="badge bg-secondary">Log Only</span></td><td>10 mins ago</td></tr>
+                                        <tr>
+                                            <td colspan="6" class="text-center py-4 text-secondary">
+                                                <div class="spinner-border spinner-border-sm me-2 text-indigo-400"></div> Loading real application records...
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
 
-                    <!-- ══ TAB: PROFILE ══ -->
+                    <!-- ══ TAB 3: CANDIDATE PROFILE ══ -->
                     <div id="tab-profile" class="d-none p-4 p-md-5 flex-grow-1">
                         <h2 class="fw-bold text-white mb-4"><i class="bi bi-person-gear me-2"></i> Candidate Profile</h2>
                         <div class="row g-4">
                             <div class="col-md-8 mx-auto">
                                 <div class="card-custom p-4">
                                     <h4 class="fw-bold text-white mb-3">Resume & Info</h4>
-                                    <div class="mb-3"><label class="form-label text-secondary small">Name</label><input type="text" class="form-control" value="Ateeb Ahmad" readonly></div>
-                                    <div class="mb-3"><label class="form-label text-secondary small">Email</label><input type="text" class="form-control" value="ateebahmad298@gmail.com" readonly></div>
-                                    <div class="mb-3"><label class="form-label text-secondary small">Resume</label><input type="text" class="form-control" value="resume.docx (Loaded)" readonly></div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-secondary small">Candidate Name</label>
+                                        <input type="text" id="profile-name-input" class="form-control" value="Ateeb Ahmad" readonly>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-secondary small">Connected Gmail Address</label>
+                                        <input type="text" id="profile-email-input" class="form-control" value="ateebahmad298@gmail.com" readonly>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-secondary small">Active Resume File</label>
+                                        <input type="text" class="form-control" value="resume.docx (Parsed: React.js, Node.js, MongoDB)" readonly>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -481,6 +509,7 @@ def home():
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
         <script>
             let attachedFiles = [];
+            let allApplications = [];
 
             /* ── Auth ── */
             function showPage(p) {
@@ -491,9 +520,10 @@ def home():
             function doLogin(e) {
                 e.preventDefault();
                 const email = document.getElementById('login-email').value;
+                const app_pass = document.getElementById('login-app-pass').value;
                 const name = email.split('@')[0];
-                localStorage.setItem('fa_user', JSON.stringify({name, email}));
-                enterApp(name);
+                localStorage.setItem('fa_user', JSON.stringify({name, email, app_pass}));
+                enterApp(name, email);
             }
             function doSignup(e) {
                 e.preventDefault();
@@ -502,32 +532,115 @@ def home():
                 if (p1 !== p2) { alert('Passwords do not match!'); return; }
                 const name = document.getElementById('signup-name').value;
                 const email = document.getElementById('signup-email').value;
-                localStorage.setItem('fa_user', JSON.stringify({name, email}));
-                enterApp(name);
+                const app_pass = document.getElementById('signup-app-pass').value;
+                localStorage.setItem('fa_user', JSON.stringify({name, email, app_pass}));
+                enterApp(name, email);
             }
-            function doLogout() {
-                localStorage.removeItem('fa_user');
-                showPage('login');
-            }
-            function enterApp(name) {
+            function enterApp(name, email) {
                 const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-                document.getElementById('avatar-initials').textContent = initials;
-                document.getElementById('sidebar-user-name').textContent = name;
+                document.getElementById('avatar-initials').textContent = initials || 'AA';
+                document.getElementById('sidebar-user-name').textContent = name || 'Candidate';
+                document.getElementById('profile-name-input').value = name || 'Candidate';
+                document.getElementById('profile-email-input').value = email || 'ateebahmad298@gmail.com';
                 showPage('app');
+                switchTab('chat');
+                loadRealApplications();
+            }
+            function getUserCreds() {
+                try { return JSON.parse(localStorage.getItem('fa_user')) || {}; } catch(e) { return {}; }
             }
             // Auto-login if session exists
             (function(){
                 const u = localStorage.getItem('fa_user');
-                if (u) { const d = JSON.parse(u); enterApp(d.name); }
+                if (u) { const d = JSON.parse(u); enterApp(d.name, d.email); }
             })();
 
             /* ── Tabs ── */
             function switchTab(t) {
-                ['landing','chat','dashboard','profile'].forEach(id => {
-                    document.getElementById('tab-'+id).classList.toggle('d-none', id !== t);
+                ['chat','dashboard','profile'].forEach(id => {
+                    const el = document.getElementById('tab-'+id);
                     const nav = document.getElementById('nav-'+id);
+                    if (el) el.classList.toggle('d-none', id !== t);
                     if (nav) nav.classList.toggle('active', id === t);
                 });
+                if (t === 'dashboard') {
+                    loadRealApplications();
+                }
+            }
+
+            /* ── Real Applications Loader ── */
+            async function loadRealApplications() {
+                try {
+                    const res = await fetch('/api/applications');
+                    const data = await res.json();
+                    allApplications = data.applications || [];
+
+                    document.getElementById('stat-total').textContent = data.total || allApplications.length;
+                    document.getElementById('stat-emails').textContent = data.emails_sent || 0;
+
+                    renderApplicationsTable(allApplications);
+                } catch (e) {
+                    console.error("Failed to load real applications:", e);
+                }
+            }
+
+            function renderApplicationsTable(apps) {
+                const tbody = document.getElementById('jobs-table-body');
+                if (!apps || apps.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-secondary">
+                                <i class="bi bi-inbox fs-2 d-block mb-2 text-secondary"></i>
+                                <div>No applications logged yet.</div>
+                                <div class="small text-secondary">Search and apply via <strong>AI Assistant</strong> or click <strong>Fast Apply Now</strong> above!</div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = apps.map(app => {
+                    let hostname = 'Job Portal';
+                    try {
+                        hostname = new URL(app.url).hostname.replace('www.', '');
+                    } catch(e) {
+                        hostname = 'Direct Link';
+                    }
+
+                    const statusBadge = app.email_sent == 1
+                        ? '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> Email Sent</span>'
+                        : '<span class="badge bg-secondary"><i class="bi bi-journal-text me-1"></i> Discovered & Logged</span>';
+
+                    const emailDisplay = app.hr_email
+                        ? `<span class="text-white"><i class="bi bi-envelope me-1 text-indigo-400"></i> ${app.hr_email}</span>`
+                        : `<span class="text-secondary small">Direct Web Apply</span>`;
+
+                    return `
+                        <tr>
+                            <td class="fw-semibold text-white">${app.job_title || 'Software Developer'}</td>
+                            <td><span class="text-secondary">${app.company || 'Hiring Team'}</span></td>
+                            <td><a href="${app.url}" target="_blank" class="text-decoration-none" style="color:#818cf8;"><i class="bi bi-box-arrow-up-right me-1"></i> ${hostname}</a></td>
+                            <td>${emailDisplay}</td>
+                            <td>${statusBadge}</td>
+                            <td class="text-secondary small">${app.applied_at || 'Just now'}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            function filterJobsTable() {
+                const q = document.getElementById('jobSearchInput').value.toLowerCase();
+                if (!q) {
+                    renderApplicationsTable(allApplications);
+                    return;
+                }
+                const filtered = allApplications.filter(a =>
+                    (a.job_title && a.job_title.toLowerCase().includes(q)) ||
+                    (a.company && a.company.toLowerCase().includes(q)) ||
+                    (a.url && a.url.toLowerCase().includes(q)) ||
+                    (a.hr_email && a.hr_email.toLowerCase().includes(q))
+                );
+                renderApplicationsTable(filtered);
             }
 
             /* ── Media Upload ── */
@@ -580,7 +693,6 @@ def home():
 
                 // Build user bubble
                 let userHtml = '';
-                // Show attached images inline
                 attachedFiles.forEach(f => {
                     if (f.type.startsWith('image/')) {
                         const url = URL.createObjectURL(f);
@@ -606,45 +718,68 @@ def home():
                 // AI thinking bubble
                 const aiDiv = document.createElement('div');
                 aiDiv.className = 'chat-bubble-ai';
-                aiDiv.innerHTML = `<div class="text-secondary"><span class="spinner-border spinner-border-sm me-2"></span> FastApply AI is thinking...</div>`;
+                aiDiv.innerHTML = `<div class="text-secondary"><span class="spinner-border spinner-border-sm me-2 text-indigo-400"></span> FastApply AI is thinking...</div>`;
                 container.appendChild(aiDiv);
                 container.scrollTop = container.scrollHeight;
 
                 try {
+                    const creds = getUserCreds();
                     const res = await fetch('/api/chat', {
                         method: 'POST',
                         headers: {'Content-Type':'application/json'},
-                        body: JSON.stringify({prompt: promptText})
+                        body: JSON.stringify({prompt: promptText, gmail_user: creds.email, gmail_app_pass: creds.app_pass})
                     });
                     const data = await res.json();
                     aiDiv.innerHTML = `<div class="d-flex align-items-center gap-2 mb-2" style="color:#818cf8;"><i class="bi bi-lightning-charge-fill text-warning"></i> <strong class="small">FastApply AI</strong></div><div style="white-space:pre-wrap;">${data.response}</div>`;
+                    loadRealApplications();
                 } catch(err) {
                     aiDiv.innerHTML = `<div class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i> ${err.message}</div>`;
                 }
                 container.scrollTop = container.scrollHeight;
             }
 
-            /* ── Dashboard Agent ── */
+            /* ── Dashboard Agent Trigger ── */
             async function runAgentFromDash() {
                 const btn = document.getElementById('dashRunBtn');
                 btn.disabled = true;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Running...';
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Scraping & Applying...';
                 try {
+                    const creds = getUserCreds();
+                    const title = document.getElementById('dash-title').value;
+                    const location = document.getElementById('dash-location').value;
+
                     const res = await fetch('/api/run', {
                         method:'POST',
                         headers:{'Content-Type':'application/json'},
-                        body: JSON.stringify({job_title: document.getElementById('dash-title').value, location: document.getElementById('dash-location').value, max_jobs:3})
+                        body: JSON.stringify({job_title: title, location: location, max_jobs:3, gmail_user: creds.email, gmail_app_pass: creds.app_pass})
                     });
                     const d = await res.json();
+                    await loadRealApplications();
                     alert(d.message || 'Done!');
-                } catch(e) { alert('Error: '+e.message); }
-                finally { btn.disabled=false; btn.innerHTML='<i class="bi bi-lightning-charge me-2"></i> Fast Apply Now'; }
+                } catch(e) { 
+                    alert('Error: '+e.message); 
+                } finally { 
+                    btn.disabled=false; 
+                    btn.innerHTML='<i class="bi bi-lightning-charge me-2"></i> Fast Apply Now'; 
+                }
             }
         </script>
     </body>
     </html>
     """
     return HTMLResponse(content=html_content)
+
+@app.get("/api/applications")
+async def get_applications():
+    apps = get_all_applications()
+    total = len(apps)
+    emails_sent = sum(1 for a in apps if a.get("email_sent") == 1)
+    return {
+        "applications": apps,
+        "total": total,
+        "emails_sent": emails_sent,
+        "match_rate": "98%"
+    }
 
 @app.post("/api/chat")
 async def chat_endpoint(req: ChatRequest):
@@ -677,6 +812,12 @@ async def run_agent(req: JobRequest):
     init_db()
     resume_path = os.getenv("RESUME_PATH", "resume.docx")
     
+    # Use the logged-in user's Gmail for sending cold emails
+    if req.gmail_user:
+        os.environ["GMAIL_USER"] = req.gmail_user
+    if req.gmail_app_pass:
+        os.environ["GMAIL_APP_PASSWORD"] = req.gmail_app_pass
+    
     if not os.path.exists(resume_path):
         return {"status": "error", "message": f"Resume file not found at {resume_path}"}
     
@@ -686,7 +827,7 @@ async def run_agent(req: JobRequest):
         await agent.run(job_title=req.job_title, location=req.location, max_jobs=req.max_jobs)
         return {
             "status": "success",
-            "message": f"FastApply successfully processed job search for '{req.job_title}' in '{req.location}'",
+            "message": f"FastApply processed '{req.job_title}' in '{req.location}'. Cold emails dispatched from {req.gmail_user or 'configured Gmail'}.",
             "max_jobs_processed": req.max_jobs
         }
     except Exception as e:

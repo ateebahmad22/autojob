@@ -28,6 +28,17 @@ def is_already_applied(url: str, db_path="applications.db") -> bool:
     conn.close()
     return result is not None
 
+def get_all_applications(db_path="applications.db") -> list:
+    """Fetches all applications and stats from database."""
+    init_db(db_path)
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM applications ORDER BY id DESC")
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
 def log_application(job_title: str, company: str, url: str, hr_email: str = None, email_sent: bool = False, db_path="applications.db"):
     """Logs applied job and cold email status."""
     conn = sqlite3.connect(db_path)
