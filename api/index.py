@@ -656,7 +656,7 @@ def home():
 
             function doLogout() {
                 localStorage.removeItem('fa_user');
-                showPage('landing');
+                window.location.href = '/';
             }
 
             function enterApp(name, email) {
