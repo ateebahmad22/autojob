@@ -341,11 +341,6 @@ def home():
                         <label class="form-label text-secondary small">Account Password</label>
                         <input type="password" id="login-pass" class="form-control" placeholder="Enter your password" required>
                     </div>
-                    <div class="mb-3 text-start">
-                        <label class="form-label text-secondary small">Gmail App Password</label>
-                        <input type="password" id="login-app-pass" class="form-control" placeholder="xxxx xxxx xxxx xxxx" required>
-                        <div class="form-text text-secondary" style="font-size:.7rem;">Used to send cold emails to HR from your Gmail</div>
-                    </div>
                     <button type="submit" class="btn btn-accent w-100 py-2 mt-2 fw-semibold">
                         <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
                     </button>
@@ -381,13 +376,6 @@ def home():
                     <div class="mb-3 text-start">
                         <label class="form-label text-secondary small">Confirm Password</label>
                         <input type="password" id="signup-pass2" class="form-control" placeholder="Re-enter password" required>
-                    </div>
-                    <hr class="border-secondary my-3">
-                    <p class="text-secondary small text-start mb-2"><i class="bi bi-envelope-at me-1"></i> Cold emails will be sent from this Gmail</p>
-                    <div class="mb-3 text-start">
-                        <label class="form-label text-secondary small">Gmail App Password <span class="text-danger">*</span></label>
-                        <input type="password" id="signup-app-pass" class="form-control" placeholder="xxxx xxxx xxxx xxxx" required>
-                        <div class="form-text text-secondary" style="font-size:.7rem;">Google Account &gt; Security &gt; 2-Step Verification &gt; App Passwords</div>
                     </div>
                     <button type="submit" class="btn btn-accent w-100 py-2 mt-2 fw-semibold">
                         <i class="bi bi-person-plus me-2"></i> Create Account
@@ -636,9 +624,8 @@ def home():
             function doLogin(e) {
                 e.preventDefault();
                 const email = document.getElementById('login-email').value;
-                const app_pass = document.getElementById('login-app-pass').value;
                 const name = email.split('@')[0];
-                localStorage.setItem('fa_user', JSON.stringify({name, email, app_pass}));
+                localStorage.setItem('fa_user', JSON.stringify({name, email}));
                 enterApp(name, email);
             }
 
@@ -649,8 +636,7 @@ def home():
                 if (p1 !== p2) { alert('Passwords do not match!'); return; }
                 const name = document.getElementById('signup-name').value;
                 const email = document.getElementById('signup-email').value;
-                const app_pass = document.getElementById('signup-app-pass').value;
-                localStorage.setItem('fa_user', JSON.stringify({name, email, app_pass}));
+                localStorage.setItem('fa_user', JSON.stringify({name, email}));
                 enterApp(name, email);
             }
 
