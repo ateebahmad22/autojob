@@ -27,7 +27,7 @@ class ChatRequest(BaseModel):
 
 @app.get("/", response_class=HTMLResponse)
 def home():
-    html_content = """
+    html_content = r"""
     <!DOCTYPE html>
     <html lang="en" data-bs-theme="dark">
     <head>
@@ -38,23 +38,27 @@ def home():
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
         <style>
             :root {
-                --chatgpt-bg: #171717;
-                --chatgpt-sidebar: #202123;
-                --chatgpt-card: #212121;
-                --chatgpt-input: #2f2f2f;
-                --chatgpt-border: #343541;
-                --accent-primary: #10a37f;
-                --accent-indigo: #6366f1;
+                --bg: #171717;
+                --sidebar: #202123;
+                --card: #212121;
+                --input-bg: #2f2f2f;
+                --border: #343541;
+                --accent: #6366f1;
+                --accent-hover: #4f46e5;
+                --green: #10b981;
             }
+            * { box-sizing: border-box; }
             body {
-                background-color: var(--chatgpt-bg);
+                background-color: var(--bg);
                 color: #ececf1;
-                font-family: 'Söhne', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 overflow-x: hidden;
+                margin: 0;
             }
+            /* ── Sidebar ── */
             .sidebar {
-                background-color: var(--chatgpt-sidebar);
-                border-right: 1px solid var(--chatgpt-border);
+                background-color: var(--sidebar);
+                border-right: 1px solid var(--border);
                 min-height: 100vh;
             }
             .nav-link-custom {
@@ -65,88 +69,229 @@ def home():
                 align-items: center;
                 gap: 12px;
                 font-weight: 500;
-                transition: all 0.2s ease;
+                transition: all .2s;
                 text-decoration: none;
                 cursor: pointer;
             }
             .nav-link-custom:hover, .nav-link-custom.active {
                 background-color: #2a2b32;
-                color: #ffffff;
+                color: #fff;
             }
-            .chat-container {
-                max-width: 800px;
-                margin: 0 auto;
-            }
+            /* ── Chat ── */
+            .chat-container { max-width: 800px; margin: 0 auto; }
             .chat-bubble-user {
-                background-color: #2f2f2f;
+                background: #2f2f2f;
                 border-radius: 18px 18px 4px 18px;
                 padding: 14px 18px;
                 max-width: 80%;
                 margin-left: auto;
             }
             .chat-bubble-ai {
-                background-color: #212121;
-                border: 1px solid var(--chatgpt-border);
+                background: var(--card);
+                border: 1px solid var(--border);
                 border-radius: 18px 18px 18px 4px;
                 padding: 16px 20px;
                 max-width: 90%;
             }
-            .prompt-input-box {
-                background-color: var(--chatgpt-input);
-                border: 1px solid var(--chatgpt-border);
+            .prompt-area {
+                background: var(--input-bg);
+                border: 1px solid var(--border);
                 border-radius: 16px;
+                padding: 10px 14px;
+                display: flex;
+                align-items: flex-end;
+                gap: 8px;
+            }
+            .prompt-area textarea {
+                background: transparent;
+                border: none;
                 color: #fff;
-                padding: 14px 20px;
                 resize: none;
+                flex: 1;
+                outline: none;
+                font-size: .95rem;
+                line-height: 1.4;
+                max-height: 120px;
             }
-            .prompt-input-box:focus {
-                background-color: var(--chatgpt-input);
+            .prompt-area textarea::placeholder { color: #888; }
+            .prompt-area .icon-btn {
+                background: none;
+                border: none;
+                color: #aaa;
+                font-size: 1.2rem;
+                cursor: pointer;
+                padding: 6px;
+                border-radius: 8px;
+                transition: .2s;
+            }
+            .prompt-area .icon-btn:hover { color: #fff; background: #3a3a3a; }
+            .prompt-area .send-btn {
+                background: var(--accent);
+                border: none;
                 color: #fff;
-                border-color: var(--accent-indigo);
-                box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+                width: 38px;
+                height: 38px;
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: .2s;
+                flex-shrink: 0;
             }
+            .prompt-area .send-btn:hover { background: var(--accent-hover); }
+            /* ── Cards ── */
             .card-custom {
-                background-color: var(--chatgpt-card);
-                border: 1px solid var(--chatgpt-border);
+                background: var(--card);
+                border: 1px solid var(--border);
                 border-radius: 14px;
             }
             .btn-accent {
-                background-color: var(--accent-indigo);
-                color: white;
+                background: var(--accent);
+                color: #fff;
                 border: none;
                 border-radius: 10px;
                 font-weight: 600;
             }
-            .btn-accent:hover {
-                background-color: #4f46e5;
-                color: white;
+            .btn-accent:hover { background: var(--accent-hover); color: #fff; }
+            .stat-badge { font-size: 2.2rem; font-weight: 700; }
+            /* ── Auth page ── */
+            .auth-page {
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: var(--bg);
             }
-            .stat-badge {
-                font-size: 2.2rem;
+            .auth-card {
+                background: var(--card);
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                padding: 40px;
+                width: 100%;
+                max-width: 420px;
+            }
+            .auth-card .form-control {
+                background: var(--input-bg);
+                border: 1px solid var(--border);
+                color: #fff;
+            }
+            .auth-card .form-control:focus {
+                background: var(--input-bg);
+                color: #fff;
+                border-color: var(--accent);
+                box-shadow: 0 0 0 2px rgba(99,102,241,.25);
+            }
+            .upload-preview {
+                max-width: 200px;
+                max-height: 120px;
+                border-radius: 10px;
+                border: 1px solid var(--border);
+            }
+            /* media attachment chip */
+            .attach-chip {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                background: #2a2b32;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 4px 10px;
+                font-size: .8rem;
+                color: #ccc;
+                margin-bottom: 6px;
+            }
+            .attach-chip .remove-attach {
+                cursor: pointer;
+                color: #f87171;
                 font-weight: 700;
             }
         </style>
     </head>
     <body>
+
+        <!-- ═══════════ AUTH SCREENS ═══════════ -->
+
+        <!-- LOGIN PAGE -->
+        <div id="page-login" class="auth-page">
+            <div class="auth-card text-center">
+                <div class="mb-4">
+                    <i class="bi bi-lightning-charge-fill text-warning fs-1"></i>
+                    <h3 class="fw-bold text-white mt-2">Welcome back to FastApply AI</h3>
+                    <p class="text-secondary small">Sign in to access your AI Job Agent dashboard</p>
+                </div>
+                <form onsubmit="doLogin(event)">
+                    <div class="mb-3 text-start">
+                        <label class="form-label text-secondary small">Email Address</label>
+                        <input type="email" id="login-email" class="form-control" placeholder="you@example.com" required>
+                    </div>
+                    <div class="mb-3 text-start">
+                        <label class="form-label text-secondary small">Password</label>
+                        <input type="password" id="login-pass" class="form-control" placeholder="Enter your password" required>
+                    </div>
+                    <button type="submit" class="btn btn-accent w-100 py-2 mt-2 fw-semibold">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
+                    </button>
+                </form>
+                <div class="mt-4 text-secondary small">
+                    Don't have an account? <a href="#" onclick="showPage('signup')" class="text-decoration-none" style="color:#818cf8;">Create Account</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SIGNUP PAGE -->
+        <div id="page-signup" class="auth-page d-none">
+            <div class="auth-card text-center">
+                <div class="mb-4">
+                    <i class="bi bi-lightning-charge-fill text-warning fs-1"></i>
+                    <h3 class="fw-bold text-white mt-2">Create your FastApply AI account</h3>
+                    <p class="text-secondary small">Set up your profile and start auto-applying in minutes</p>
+                </div>
+                <form onsubmit="doSignup(event)">
+                    <div class="mb-3 text-start">
+                        <label class="form-label text-secondary small">Full Name</label>
+                        <input type="text" id="signup-name" class="form-control" placeholder="Ateeb Ahmad" required>
+                    </div>
+                    <div class="mb-3 text-start">
+                        <label class="form-label text-secondary small">Email Address</label>
+                        <input type="email" id="signup-email" class="form-control" placeholder="you@example.com" required>
+                    </div>
+                    <div class="mb-3 text-start">
+                        <label class="form-label text-secondary small">Password</label>
+                        <input type="password" id="signup-pass" class="form-control" placeholder="Min 6 characters" required minlength="6">
+                    </div>
+                    <div class="mb-3 text-start">
+                        <label class="form-label text-secondary small">Confirm Password</label>
+                        <input type="password" id="signup-pass2" class="form-control" placeholder="Re-enter password" required>
+                    </div>
+                    <button type="submit" class="btn btn-accent w-100 py-2 mt-2 fw-semibold">
+                        <i class="bi bi-person-plus me-2"></i> Create Account
+                    </button>
+                </form>
+                <div class="mt-4 text-secondary small">
+                    Already have an account? <a href="#" onclick="showPage('login')" class="text-decoration-none" style="color:#818cf8;">Sign In</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════ MAIN APP (post-auth) ═══════════ -->
+        <div id="page-app" class="d-none">
         <div class="container-fluid p-0">
             <div class="row g-0">
+
                 <!-- Left Sidebar -->
                 <div class="col-md-3 col-lg-2 sidebar p-3 d-flex flex-column">
                     <div class="d-flex align-items-center gap-2 mb-4 px-2">
                         <i class="bi bi-lightning-charge-fill text-warning fs-3"></i>
-                        <span class="fw-bold fs-5 tracking-tight text-white">FastApply AI</span>
+                        <span class="fw-bold fs-5 text-white">FastApply AI</span>
                     </div>
-
-                    <button onclick="switchTab('chat')" class="btn btn-outline-light w-100 text-start d-flex align-items-center gap-2 mb-3 py-2 px-3 rounded-3">
-                        <i class="bi bi-plus-lg"></i> New AI Prompt
-                    </button>
 
                     <div class="nav flex-column gap-1 flex-grow-1">
                         <a onclick="switchTab('landing')" id="nav-landing" class="nav-link-custom active">
-                            <i class="bi bi-house"></i> Home Landing
+                            <i class="bi bi-house"></i> Home
                         </a>
                         <a onclick="switchTab('chat')" id="nav-chat" class="nav-link-custom">
-                            <i class="bi bi-chat-square-text"></i> ChatGPT AI Assistant
+                            <i class="bi bi-chat-square-text"></i> AI Assistant
                         </a>
                         <a onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-link-custom">
                             <i class="bi bi-speedometer2"></i> Dashboard & Jobs
@@ -156,157 +301,137 @@ def home():
                         </a>
                     </div>
 
-                    <!-- User Footer Profile -->
+                    <!-- User Footer -->
                     <div class="pt-3 border-top border-secondary-subtle d-flex align-items-center justify-content-between px-1">
                         <div class="d-flex align-items-center gap-2">
-                            <div class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold" style="width: 36px; height: 36px; background:#6366f1;">
-                                AA
-                            </div>
+                            <div class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold" style="width:36px;height:36px;background:#6366f1;" id="avatar-initials">AA</div>
                             <div>
-                                <div class="fw-bold text-white small" id="user-name-display">Ateeb Ahmad</div>
-                                <div class="text-secondary micro" style="font-size:0.75rem;">Full Stack Dev</div>
+                                <div class="fw-bold text-white small" id="sidebar-user-name">Ateeb Ahmad</div>
+                                <div class="text-secondary" style="font-size:.72rem;">Full Stack Dev</div>
                             </div>
                         </div>
-                        <button onclick="openAuthModal()" class="btn btn-sm btn-link text-secondary p-0">
+                        <button onclick="doLogout()" class="btn btn-sm btn-link text-secondary p-0" title="Logout">
                             <i class="bi bi-box-arrow-right fs-5"></i>
                         </button>
                     </div>
                 </div>
 
-                <!-- Main Content Area -->
+                <!-- Main Content -->
                 <div class="col-md-9 col-lg-10 min-vh-100 d-flex flex-column">
 
-                    <!-- Top Navbar -->
+                    <!-- Top Bar -->
                     <div class="border-bottom border-secondary-subtle py-3 px-4 d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center gap-3">
                             <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">
-                                <i class="bi bi-circle-fill fs-6 me-1" style="font-size:8px;"></i> FastApply Engine Live
+                                <i class="bi bi-circle-fill me-1" style="font-size:8px;"></i> FastApply Engine Live
                             </span>
-                            <span class="text-secondary small">Vercel Cloud Serverless + Playwright Automation</span>
+                            <span class="text-secondary small">Vercel Serverless + Playwright Automation</span>
                         </div>
-                        <div class="d-flex gap-2">
-                            <button onclick="openAuthModal()" class="btn btn-sm btn-outline-light px-3 rounded-pill">Login / Register</button>
-                            <button onclick="switchTab('chat')" class="btn btn-sm btn-accent px-3 rounded-pill">Open AI Assistant</button>
-                        </div>
+                        <button onclick="switchTab('chat')" class="btn btn-sm btn-accent px-3 rounded-pill">Open AI Assistant</button>
                     </div>
 
-                    <!-- TAB 1: LANDING PAGE -->
+                    <!-- ══ TAB: LANDING ══ -->
                     <div id="tab-landing" class="p-4 p-md-5 flex-grow-1">
-                        <div class="max-w-4xl mx-auto text-center py-5">
-                            <span class="badge bg-indigo-500-subtle text-indigo-400 border border-indigo-500-subtle px-3 py-2 rounded-pill mb-3" style="color:#818cf8;">
-                                ⚡ FastApply AI - Autonomous Application Platform
+                        <div class="text-center py-5 mx-auto" style="max-width:800px;">
+                            <span class="badge rounded-pill px-3 py-2 mb-3" style="color:#818cf8;border:1px solid #4338ca;">
+                                ⚡ FastApply AI — Autonomous Application Platform
                             </span>
-                            <h1 class="display-4 fw-extrabold mb-4 text-white">
+                            <h1 class="display-4 fw-bold mb-4 text-white">
                                 Land Jobs 10x Faster with <span style="color:#818cf8;">FastApply AI</span>
                             </h1>
-                            <p class="lead text-secondary mb-5 mx-auto" style="max-width:700px;">
-                                FastApply AI reads your resume, crawls top job portals (LinkedIn, Indeed, Wellfound), extracts recruiter emails, writes hyper-personalized cold emails using Gemini 3.6 AI, and dispatches them straight from your Gmail.
+                            <p class="lead text-secondary mb-5 mx-auto" style="max-width:680px;">
+                                FastApply AI reads your resume, crawls top job portals, extracts recruiter emails, writes hyper-personalized cold emails using Gemini 3.6 AI, and dispatches them straight from your Gmail.
                             </p>
-                            <div class="d-flex justify-content-center gap-3">
+                            <div class="d-flex justify-content-center gap-3 flex-wrap">
                                 <button onclick="switchTab('chat')" class="btn btn-accent btn-lg px-4 py-3 shadow">
-                                    <i class="bi bi-robot me-2"></i> Launch ChatGPT AI Assistant
+                                    <i class="bi bi-robot me-2"></i> Launch AI Assistant
                                 </button>
                                 <button onclick="switchTab('dashboard')" class="btn btn-outline-light btn-lg px-4 py-3">
-                                    <i class="bi bi-bar-chart-line me-2"></i> View Live Dashboard
+                                    <i class="bi bi-bar-chart-line me-2"></i> View Dashboard
                                 </button>
                             </div>
                         </div>
-
-                        <!-- Features Grid -->
                         <div class="row g-4 mt-4">
                             <div class="col-md-4">
                                 <div class="card-custom p-4 h-100">
                                     <i class="bi bi-file-earmark-person fs-1 mb-3" style="color:#818cf8;"></i>
-                                    <h4 class="fw-bold text-white mb-2">1. Smart Resume Reader</h4>
-                                    <p class="text-secondary small">Automatically extracts skills, experience, and contact info from `.docx` and `.pdf` resumes.</p>
+                                    <h4 class="fw-bold text-white mb-2">Smart Resume Reader</h4>
+                                    <p class="text-secondary small">Extracts skills, experience, and contact info from .docx and .pdf resumes automatically.</p>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="card-custom p-4 h-100">
                                     <i class="bi bi-cpu fs-1 text-success mb-3"></i>
-                                    <h4 class="fw-bold text-white mb-2">2. Gemini 3.6 Flash AI</h4>
+                                    <h4 class="fw-bold text-white mb-2">Gemini 3.6 Flash AI</h4>
                                     <p class="text-secondary small">Generates hyper-personalized cold emails targeting specific job requirements and company missions.</p>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="card-custom p-4 h-100">
                                     <i class="bi bi-send-check fs-1 text-info mb-3"></i>
-                                    <h4 class="fw-bold text-white mb-2">3. Direct Gmail Dispatch</h4>
-                                    <p class="text-secondary small">Sends cold emails directly from your personal Gmail account with automatic SQLite tracking.</p>
+                                    <h4 class="fw-bold text-white mb-2">Direct Gmail Dispatch</h4>
+                                    <p class="text-secondary small">Sends cold emails directly from your Gmail with automatic SQLite duplicate tracking.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- TAB 2: CHATGPT-STYLE AI ASSISTANT CHATBOX -->
+                    <!-- ══ TAB: AI ASSISTANT (with media upload) ══ -->
                     <div id="tab-chat" class="d-none flex-grow-1 d-flex flex-column p-4">
                         <div class="chat-container flex-grow-1 w-100 d-flex flex-column">
-                            <div id="chat-messages" class="flex-grow-1 overflow-auto pe-2 mb-4 d-flex flex-column gap-3" style="max-height: 65vh;">
+                            <div id="chat-messages" class="flex-grow-1 overflow-auto pe-2 mb-4 d-flex flex-column gap-3" style="max-height:65vh;">
                                 <div class="chat-bubble-ai">
                                     <div class="d-flex align-items-center gap-2 mb-2" style="color:#818cf8;">
-                                        <i class="bi bi-lightning-charge-fill text-warning"></i> <strong class="small">FastApply AI Assistant</strong>
+                                        <i class="bi bi-lightning-charge-fill text-warning"></i>
+                                        <strong class="small">FastApply AI Assistant</strong>
                                     </div>
-                                    <div>Hello Ateeb! Welcome to FastApply AI. Give me any instruction like:</div>
+                                    <div>Hello! I'm your AI Assistant. You can ask me anything or attach files like resumes, screenshots, or documents. Try:</div>
                                     <ul class="mt-2 mb-0 text-secondary small">
-                                        <li><em>"Fast apply to 3 Remote Full Stack Developer jobs"</em></li>
-                                        <li><em>"Draft a tailored cold email for a Senior MERN Developer role"</em></li>
-                                        <li><em>"Summarize top skills from my resume"</em></li>
+                                        <li><em>"Fast apply to 5 Remote Full Stack Developer jobs"</em></li>
+                                        <li><em>"Draft a cold email for a Senior MERN role"</em></li>
+                                        <li><em>"Analyze the attached resume and suggest improvements"</em></li>
                                     </ul>
                                 </div>
                             </div>
 
-                            <!-- Input Box -->
-                            <div class="position-relative">
-                                <textarea id="promptInput" class="form-control prompt-input-box w-100 pe-5" rows="3" placeholder="Ask FastApply AI or give an instruction... (e.g. Fast apply 5 Remote React Developer jobs)"></textarea>
-                                <button onclick="sendChatMessage()" class="btn btn-accent position-absolute bottom-0 end-0 m-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
-                                    <i class="bi bi-send-fill"></i>
+                            <!-- Attachment preview area -->
+                            <div id="attach-preview" class="mb-2"></div>
+
+                            <!-- Input box with media upload -->
+                            <div class="prompt-area">
+                                <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt" multiple hidden onchange="handleFileSelect(event)">
+                                <button class="icon-btn" onclick="document.getElementById('fileInput').click()" title="Attach file or image">
+                                    <i class="bi bi-paperclip"></i>
+                                </button>
+                                <button class="icon-btn" onclick="document.getElementById('fileInput').click()" title="Upload image">
+                                    <i class="bi bi-image"></i>
+                                </button>
+                                <textarea id="promptInput" rows="1" placeholder="Message FastApply AI..." oninput="autoGrow(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage();}"></textarea>
+                                <button class="send-btn" onclick="sendChatMessage()" title="Send">
+                                    <i class="bi bi-arrow-up"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- TAB 3: DASHBOARD & JOBS -->
+                    <!-- ══ TAB: DASHBOARD ══ -->
                     <div id="tab-dashboard" class="d-none p-4 p-md-5 flex-grow-1">
-                        <h2 class="fw-bold text-white mb-4"><i class="bi bi-speedometer2 me-2"></i> Application Analytics & Logs</h2>
-                        
-                        <!-- Metrics Row -->
+                        <h2 class="fw-bold text-white mb-4"><i class="bi bi-speedometer2 me-2"></i> Application Analytics</h2>
                         <div class="row g-4 mb-4">
-                            <div class="col-md-3">
-                                <div class="card-custom p-4">
-                                    <div class="text-secondary small fw-semibold">Total Jobs Processed</div>
-                                    <div class="stat-badge text-white mt-2" id="stat-total">12</div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card-custom p-4">
-                                    <div class="text-secondary small fw-semibold">Cold Emails Sent</div>
-                                    <div class="stat-badge text-success mt-2" id="stat-emails">4</div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card-custom p-4">
-                                    <div class="text-secondary small fw-semibold">FastApply Rate</div>
-                                    <div class="stat-badge mt-2" style="color:#818cf8;">98%</div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card-custom p-4">
-                                    <div class="text-secondary small fw-semibold">Agent Engine</div>
-                                    <div class="fs-4 fw-bold text-success mt-2">Active</div>
-                                </div>
-                            </div>
+                            <div class="col-md-3"><div class="card-custom p-4"><div class="text-secondary small fw-semibold">Total Jobs</div><div class="stat-badge text-white mt-2">12</div></div></div>
+                            <div class="col-md-3"><div class="card-custom p-4"><div class="text-secondary small fw-semibold">Emails Sent</div><div class="stat-badge text-success mt-2">4</div></div></div>
+                            <div class="col-md-3"><div class="card-custom p-4"><div class="text-secondary small fw-semibold">Match Rate</div><div class="stat-badge mt-2" style="color:#818cf8;">98%</div></div></div>
+                            <div class="col-md-3"><div class="card-custom p-4"><div class="text-secondary small fw-semibold">Engine</div><div class="fs-4 fw-bold text-success mt-2">Active</div></div></div>
                         </div>
-
-                        <!-- Direct Run Controls Card -->
                         <div class="card-custom p-4 mb-4">
-                            <h4 class="fw-bold text-white mb-3"><i class="bi bi-play-circle me-2"></i> Quick FastApply Trigger</h4>
+                            <h4 class="fw-bold text-white mb-3"><i class="bi bi-play-circle me-2"></i> Quick FastApply</h4>
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <label class="form-label text-secondary small">Target Role</label>
                                     <input type="text" id="dash-title" class="form-control" value="Full Stack Developer">
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label text-secondary small">Target Location</label>
+                                    <label class="form-label text-secondary small">Location</label>
                                     <input type="text" id="dash-location" class="form-control" value="Remote">
                                 </div>
                                 <div class="col-md-4 d-flex align-items-end">
@@ -316,79 +441,38 @@ def home():
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Jobs Table -->
                         <div class="card-custom p-4">
-                            <h4 class="fw-bold text-white mb-3">Recent Application Records</h4>
+                            <h4 class="fw-bold text-white mb-3">Recent Applications</h4>
                             <div class="table-responsive">
-                                <table class="table table-dark table-hover align-middle">
-                                    <thead>
-                                        <tr class="text-secondary border-secondary">
-                                            <th>Role</th>
-                                            <th>Company / Portal</th>
-                                            <th>HR Contact Email</th>
-                                            <th>Cold Email Status</th>
-                                            <th>Applied Date</th>
-                                        </tr>
-                                    </thead>
+                                <table class="table table-dark table-hover align-middle mb-0">
+                                    <thead><tr class="text-secondary border-secondary"><th>Role</th><th>Portal</th><th>HR Email</th><th>Status</th><th>Date</th></tr></thead>
                                     <tbody id="jobs-table-body">
-                                        <tr>
-                                            <td>Full Stack Developer</td>
-                                            <td><a href="https://www.indeed.com" target="_blank" style="color:#818cf8;">Indeed Job</a></td>
-                                            <td>rspack@1.7.1</td>
-                                            <td><span class="badge bg-success">Email Sent</span></td>
-                                            <td>Just now</td>
-                                        </tr>
-                                        <tr>
-                                            <td>React Node Developer</td>
-                                            <td><a href="https://remote.co" target="_blank" style="color:#818cf8;">Remote.co</a></td>
-                                            <td>hr@remote.co</td>
-                                            <td><span class="badge bg-secondary">Log Only</span></td>
-                                            <td>10 mins ago</td>
-                                        </tr>
+                                        <tr><td>Full Stack Developer</td><td><a href="#" style="color:#818cf8;">Indeed</a></td><td>hr@company.com</td><td><span class="badge bg-success">Email Sent</span></td><td>Just now</td></tr>
+                                        <tr><td>React Node Developer</td><td><a href="#" style="color:#818cf8;">Remote.co</a></td><td>jobs@remote.co</td><td><span class="badge bg-secondary">Log Only</span></td><td>10 mins ago</td></tr>
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
 
-                    <!-- TAB 4: PROFILE & SETTINGS -->
+                    <!-- ══ TAB: PROFILE ══ -->
                     <div id="tab-profile" class="d-none p-4 p-md-5 flex-grow-1">
-                        <h2 class="fw-bold text-white mb-4"><i class="bi bi-person-gear me-2"></i> Candidate Profile & API Credentials</h2>
-                        
+                        <h2 class="fw-bold text-white mb-4"><i class="bi bi-person-gear me-2"></i> Candidate Profile</h2>
                         <div class="row g-4">
                             <div class="col-md-6">
                                 <div class="card-custom p-4">
                                     <h4 class="fw-bold text-white mb-3">Resume & Info</h4>
-                                    <div class="mb-3">
-                                        <label class="form-label text-secondary small">Candidate Name</label>
-                                        <input type="text" class="form-control" value="Ateeb Ahmad" readonly>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label text-secondary small">Primary Email</label>
-                                        <input type="text" class="form-control" value="ateebahmad298@gmail.com" readonly>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label text-secondary small">Active Resume File</label>
-                                        <input type="text" class="form-control" value="resume.docx (Loaded & Parsed)" readonly>
-                                    </div>
+                                    <div class="mb-3"><label class="form-label text-secondary small">Name</label><input type="text" class="form-control" value="Ateeb Ahmad" readonly></div>
+                                    <div class="mb-3"><label class="form-label text-secondary small">Email</label><input type="text" class="form-control" value="ateebahmad298@gmail.com" readonly></div>
+                                    <div class="mb-3"><label class="form-label text-secondary small">Resume</label><input type="text" class="form-control" value="resume.docx (Loaded)" readonly></div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="card-custom p-4">
-                                    <h4 class="fw-bold text-white mb-3">Connected API Services</h4>
-                                    <div class="mb-3">
-                                        <label class="form-label text-secondary small">Gemini AI API Key</label>
-                                        <input type="password" class="form-control" value="••••••••••••••••••••••••••••••••" readonly>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label text-secondary small">Gmail App Password</label>
-                                        <input type="password" class="form-control" value="••••••••••••••••" readonly>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label text-secondary small">Browserless Cloud Token</label>
-                                        <input type="password" class="form-control" value="••••••••••••••••••••••••••••••••" readonly>
-                                    </div>
+                                    <h4 class="fw-bold text-white mb-3">API Services</h4>
+                                    <div class="mb-3"><label class="form-label text-secondary small">Gemini API Key</label><input type="password" class="form-control" value="configured" readonly></div>
+                                    <div class="mb-3"><label class="form-label text-secondary small">Gmail App Password</label><input type="password" class="form-control" value="configured" readonly></div>
+                                    <div class="mb-3"><label class="form-label text-secondary small">Browserless Token</label><input type="password" class="form-control" value="configured" readonly></div>
                                 </div>
                             </div>
                         </div>
@@ -397,112 +481,169 @@ def home():
                 </div>
             </div>
         </div>
-
-        <!-- Auth Modal -->
-        <div class="modal fade" id="authModal" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content card-custom p-3">
-                    <div class="modal-header border-0">
-                        <h5 class="modal-title fw-bold text-white">Login / Register to FastApply AI</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="loginForm">
-                            <div class="mb-3">
-                                <label class="form-label text-secondary small">Email Address</label>
-                                <input type="email" class="form-control" value="ateebahmad298@gmail.com" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label text-secondary small">Password</label>
-                                <input type="password" class="form-control" value="••••••••••••" required>
-                            </div>
-                            <button type="submit" class="btn btn-accent w-100 py-2 mt-2">Continue to FastApply Dashboard</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </div><!-- /page-app -->
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
         <script>
-            function switchTab(tabId) {
-                ['landing', 'chat', 'dashboard', 'profile'].forEach(t => {
-                    const el = document.getElementById('tab-' + t);
-                    const nav = document.getElementById('nav-' + t);
-                    if (t === tabId) {
-                        el.classList.remove('d-none');
-                        if (nav) nav.classList.add('active');
-                    } else {
-                        el.classList.add('d-none');
-                        if (nav) nav.classList.remove('active');
-                    }
+            let attachedFiles = [];
+
+            /* ── Auth ── */
+            function showPage(p) {
+                ['login','signup','app'].forEach(id => {
+                    document.getElementById('page-'+id).classList.toggle('d-none', id !== p);
+                });
+            }
+            function doLogin(e) {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value;
+                const name = email.split('@')[0];
+                localStorage.setItem('fa_user', JSON.stringify({name, email}));
+                enterApp(name);
+            }
+            function doSignup(e) {
+                e.preventDefault();
+                const p1 = document.getElementById('signup-pass').value;
+                const p2 = document.getElementById('signup-pass2').value;
+                if (p1 !== p2) { alert('Passwords do not match!'); return; }
+                const name = document.getElementById('signup-name').value;
+                const email = document.getElementById('signup-email').value;
+                localStorage.setItem('fa_user', JSON.stringify({name, email}));
+                enterApp(name);
+            }
+            function doLogout() {
+                localStorage.removeItem('fa_user');
+                showPage('login');
+            }
+            function enterApp(name) {
+                const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+                document.getElementById('avatar-initials').textContent = initials;
+                document.getElementById('sidebar-user-name').textContent = name;
+                showPage('app');
+            }
+            // Auto-login if session exists
+            (function(){
+                const u = localStorage.getItem('fa_user');
+                if (u) { const d = JSON.parse(u); enterApp(d.name); }
+            })();
+
+            /* ── Tabs ── */
+            function switchTab(t) {
+                ['landing','chat','dashboard','profile'].forEach(id => {
+                    document.getElementById('tab-'+id).classList.toggle('d-none', id !== t);
+                    const nav = document.getElementById('nav-'+id);
+                    if (nav) nav.classList.toggle('active', id === t);
                 });
             }
 
-            function openAuthModal() {
-                const modal = new bootstrap.Modal(document.getElementById('authModal'));
-                modal.show();
+            /* ── Media Upload ── */
+            function handleFileSelect(e) {
+                const files = Array.from(e.target.files);
+                files.forEach(f => {
+                    attachedFiles.push(f);
+                    renderAttachments();
+                });
+                e.target.value = '';
+            }
+            function removeAttach(idx) {
+                attachedFiles.splice(idx, 1);
+                renderAttachments();
+            }
+            function renderAttachments() {
+                const box = document.getElementById('attach-preview');
+                box.innerHTML = '';
+                attachedFiles.forEach((f, i) => {
+                    const isImg = f.type.startsWith('image/');
+                    let html = `<span class="attach-chip">`;
+                    html += isImg ? `<i class="bi bi-image text-info"></i>` : `<i class="bi bi-file-earmark text-warning"></i>`;
+                    html += ` ${f.name} <span class="remove-attach" onclick="removeAttach(${i})">&times;</span></span> `;
+
+                    if (isImg) {
+                        const reader = new FileReader();
+                        reader.onload = function(ev) {
+                            const imgEl = document.createElement('img');
+                            imgEl.src = ev.target.result;
+                            imgEl.className = 'upload-preview me-2 mb-1';
+                            box.insertBefore(imgEl, box.firstChild);
+                        };
+                        reader.readAsDataURL(f);
+                    }
+                    box.innerHTML += html;
+                });
             }
 
+            /* ── Chat ── */
+            function autoGrow(el) {
+                el.style.height = '0';
+                el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+            }
             async function sendChatMessage() {
                 const input = document.getElementById('promptInput');
-                const promptText = input.value.trim();
-                if (!promptText) return;
+                const text = input.value.trim();
+                if (!text && attachedFiles.length === 0) return;
 
-                const chatContainer = document.getElementById('chat-messages');
+                const container = document.getElementById('chat-messages');
 
-                // User Bubble
+                // Build user bubble
+                let userHtml = '';
+                // Show attached images inline
+                attachedFiles.forEach(f => {
+                    if (f.type.startsWith('image/')) {
+                        const url = URL.createObjectURL(f);
+                        userHtml += `<img src="${url}" class="upload-preview d-block mb-2">`;
+                    } else {
+                        userHtml += `<div class="attach-chip mb-1"><i class="bi bi-file-earmark text-warning"></i> ${f.name}</div>`;
+                    }
+                });
+                if (text) userHtml += `<div>${text}</div>`;
+
                 const userDiv = document.createElement('div');
                 userDiv.className = 'chat-bubble-user';
-                userDiv.innerHTML = `<div>${promptText}</div>`;
-                chatContainer.appendChild(userDiv);
+                userDiv.innerHTML = userHtml;
+                container.appendChild(userDiv);
 
+                const promptText = text || (attachedFiles.length > 0 ? 'Analyze the attached file(s).' : '');
                 input.value = '';
-                chatContainer.scrollTop = chatContainer.scrollHeight;
+                input.style.height = '';
+                attachedFiles = [];
+                document.getElementById('attach-preview').innerHTML = '';
+                container.scrollTop = container.scrollHeight;
 
-                // AI Loading Bubble
+                // AI thinking bubble
                 const aiDiv = document.createElement('div');
                 aiDiv.className = 'chat-bubble-ai';
-                aiDiv.innerHTML = `<div class="text-secondary"><i class="bi bi-arrow-repeat spin me-2"></i> FastApply AI is thinking...</div>`;
-                chatContainer.appendChild(aiDiv);
-                chatContainer.scrollTop = chatContainer.scrollHeight;
+                aiDiv.innerHTML = `<div class="text-secondary"><span class="spinner-border spinner-border-sm me-2"></span> FastApply AI is thinking...</div>`;
+                container.appendChild(aiDiv);
+                container.scrollTop = container.scrollHeight;
 
                 try {
                     const res = await fetch('/api/chat', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt: promptText })
+                        headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({prompt: promptText})
                     });
                     const data = await res.json();
-                    aiDiv.innerHTML = `<div class="d-flex align-items-center gap-2 mb-2" style="color:#818cf8;"><i class="bi bi-lightning-charge-fill text-warning"></i> <strong class="small">FastApply AI</strong></div><div>${data.response}</div>`;
-                } catch (err) {
-                    aiDiv.innerHTML = `<div class="text-danger">Error: ${err.message}</div>`;
+                    aiDiv.innerHTML = `<div class="d-flex align-items-center gap-2 mb-2" style="color:#818cf8;"><i class="bi bi-lightning-charge-fill text-warning"></i> <strong class="small">FastApply AI</strong></div><div style="white-space:pre-wrap;">${data.response}</div>`;
+                } catch(err) {
+                    aiDiv.innerHTML = `<div class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i> ${err.message}</div>`;
                 }
-                chatContainer.scrollTop = chatContainer.scrollHeight;
+                container.scrollTop = container.scrollHeight;
             }
 
+            /* ── Dashboard Agent ── */
             async function runAgentFromDash() {
                 const btn = document.getElementById('dashRunBtn');
                 btn.disabled = true;
-                btn.innerHTML = '⏳ Running FastApply...';
-
-                const title = document.getElementById('dash-title').value;
-                const location = document.getElementById('dash-location').value;
-
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Running...';
                 try {
                     const res = await fetch('/api/run', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ job_title: title, location: location, max_jobs: 3 })
+                        method:'POST',
+                        headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify({job_title: document.getElementById('dash-title').value, location: document.getElementById('dash-location').value, max_jobs:3})
                     });
-                    const data = await res.json();
-                    alert(data.message || 'FastApply Finished!');
-                } catch (e) {
-                    alert('Execution Error: ' + e.message);
-                } finally {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-lightning-charge me-2"></i> Fast Apply Now';
-                }
+                    const d = await res.json();
+                    alert(d.message || 'Done!');
+                } catch(e) { alert('Error: '+e.message); }
+                finally { btn.disabled=false; btn.innerHTML='<i class="bi bi-lightning-charge me-2"></i> Fast Apply Now'; }
             }
         </script>
     </body>
