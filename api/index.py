@@ -582,6 +582,10 @@ def home():
                 localStorage.setItem('fa_user', JSON.stringify({name, email, app_pass}));
                 enterApp(name, email);
             }
+            function doLogout() {
+                localStorage.removeItem('fa_user');
+                showPage('login');
+            }
             function enterApp(name, email) {
                 const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
                 document.getElementById('avatar-initials').textContent = initials || 'AA';
