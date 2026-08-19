@@ -1,4 +1,5 @@
 import asyncio
+import os
 import re
 import sys
 import urllib.parse
@@ -33,15 +34,22 @@ class JobAutomationAgent:
                 return urllib.parse.unquote(extracted)
             except Exception:
                 pass
-        if href.startswith("//"):
+        if href and href.startswith("//"):
             return "https:" + href
-        return href
+        return href or ""
 
     async def run(self, job_title: str, location: str, max_jobs: int = 5):
         """Automates searching for jobs on portals, extracting HR emails, sending cold emails, and logging applications."""
         async with async_playwright() as p:
-            print("[INFO] Launching Chromium browser automation engine...")
-            browser = await p.chromium.launch(headless=False)
+            browserless_token = os.getenv("BROWSERLESS_TOKEN")
+            
+            if browserless_token:
+                print("[INFO] Connecting to Cloud Browser via Browserless.io...")
+                browser = await p.chromium.connect_over_cdp(f"wss://chrome.browserless.io?token={browserless_token}")
+            else:
+                print("[INFO] Launching local Chromium browser automation engine...")
+                browser = await p.chromium.launch(headless=False)
+
             context = await browser.new_context(
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             )

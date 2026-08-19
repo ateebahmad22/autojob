@@ -1,0 +1,38 @@
+name: Daily AI Job Application & Cold Email Agent
+
+on:
+  schedule:
+    # Runs automatically every day at 9:00 AM UTC (2:30 PM IST)
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    # Allows manual 1-click trigger from GitHub Actions tab
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      - name: Run AI Job Agent
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          RESUME_PATH: 'resume.docx'
+          DEFAULT_JOB_TITLE: 'Full Stack Developer'
+          DEFAULT_LOCATION: 'Remote'
+        run: |
+          python main.py "Full Stack Developer" "Remote" 5
