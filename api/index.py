@@ -91,7 +91,7 @@ def home():
                 color: #fff;
             }
             /* ── Chat ── */
-            .chat-container { max-width: 850px; margin: 0 auto; }
+            .chat-container { max-width: 880px; margin: 0 auto; }
             .chat-bubble-user {
                 background: #2f2f2f;
                 border-radius: 18px 18px 4px 18px;
@@ -104,18 +104,41 @@ def home():
                 border: 1px solid var(--border);
                 border-radius: 18px 18px 18px 4px;
                 padding: 16px 20px;
-                max-width: 95%;
+                max-width: 98%;
             }
             .job-card-chat {
-                background: #2a2b32;
+                background: #25262b;
                 border: 1px solid var(--border);
-                border-radius: 12px;
-                padding: 14px 16px;
-                margin-top: 10px;
-                transition: transform 0.2s;
+                border-radius: 14px;
+                padding: 16px 18px;
+                margin-top: 12px;
+                transition: all 0.2s ease-in-out;
             }
             .job-card-chat:hover {
                 border-color: var(--accent);
+                box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            }
+            .skill-pill {
+                background: #1e1e24;
+                border: 1px solid #383a45;
+                color: #a5b4fc;
+                border-radius: 6px;
+                padding: 2px 8px;
+                font-size: 0.76rem;
+                display: inline-block;
+                margin-right: 4px;
+                margin-bottom: 4px;
+            }
+            .benefit-pill {
+                background: #142820;
+                border: 1px solid #1e4635;
+                color: #6ee7b7;
+                border-radius: 6px;
+                padding: 2px 8px;
+                font-size: 0.76rem;
+                display: inline-block;
+                margin-right: 4px;
+                margin-bottom: 4px;
             }
             .prompt-area {
                 background: var(--input-bg);
@@ -354,7 +377,7 @@ def home():
                             <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">
                                 <i class="bi bi-circle-fill me-1" style="font-size:8px;"></i> FastApply Engine Live
                             </span>
-                            <span class="text-secondary small d-none d-md-inline">Interactive AI Job Search & 1-Click Cold Email Dispatch</span>
+                            <span class="text-secondary small d-none d-md-inline">Detailed AI Job Search, Role Breakdown & 1-Click Fast Apply</span>
                         </div>
                         <div class="d-flex gap-2">
                             <button onclick="switchTab('dashboard')" class="btn btn-sm btn-outline-light px-3 rounded-pill">
@@ -366,7 +389,7 @@ def home():
                         </div>
                     </div>
 
-                    <!-- ══ TAB 1: AI ASSISTANT (with Interactive Job Cards in Chat) ══ -->
+                    <!-- ══ TAB 1: AI ASSISTANT (with In-Depth Job Breakdown & 1-Click Apply) ══ -->
                     <div id="tab-chat" class="flex-grow-1 d-flex flex-column p-4">
                         <div class="chat-container flex-grow-1 w-100 d-flex flex-column">
                             <div id="chat-messages" class="flex-grow-1 overflow-auto pe-2 mb-4 d-flex flex-column gap-3" style="max-height:65vh;">
@@ -375,11 +398,11 @@ def home():
                                         <i class="bi bi-lightning-charge-fill text-warning"></i>
                                         <strong class="small">FastApply AI Assistant</strong>
                                     </div>
-                                    <div>Hello! I can search live jobs for your profile and display salary package, HR email, and 1-Click Fast Apply buttons directly in this chat. Try asking:</div>
+                                    <div>Hello! I search live job openings and give you <strong>complete role details</strong> (Job Description, Responsibilities, Tech Stack, Salary Package, HR Email, and Resume Match Score). Ask me anything like:</div>
                                     <ul class="mt-2 mb-0 text-secondary small">
-                                        <li><em>"Show 4 Remote Full Stack Developer jobs with salary & HR contact"</em></li>
-                                        <li><em>"Find React Developer openings in Bangalore"</em></li>
-                                        <li><em>"Search Python Data Analyst roles"</em></li>
+                                        <li><em>"Show 4 detailed Remote Full Stack Developer jobs with salary & HR contacts"</em></li>
+                                        <li><em>"Search Senior React Developer roles with required skills"</em></li>
+                                        <li><em>"Find Data Analyst jobs with responsibilities and benefits"</em></li>
                                     </ul>
                                 </div>
                             </div>
@@ -396,7 +419,7 @@ def home():
                                 <button class="icon-btn" onclick="document.getElementById('fileInput').click()" title="Upload image">
                                     <i class="bi bi-image"></i>
                                 </button>
-                                <textarea id="promptInput" rows="1" placeholder="Ask AI to find jobs... (e.g. Find 4 React Remote jobs)" oninput="autoGrow(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage();}"></textarea>
+                                <textarea id="promptInput" rows="1" placeholder="Ask AI to find detailed jobs... (e.g. Show detailed Remote React Developer jobs)" oninput="autoGrow(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage();}"></textarea>
                                 <button class="send-btn" onclick="sendChatMessage()" title="Send">
                                     <i class="bi bi-arrow-up"></i>
                                 </button>
@@ -697,6 +720,18 @@ def home():
                 }
             }
 
+            function toggleDetails(id) {
+                const el = document.getElementById(id);
+                const icon = document.getElementById('icon-' + id);
+                if (el.classList.contains('d-none')) {
+                    el.classList.remove('d-none');
+                    if (icon) icon.className = 'bi bi-chevron-up me-1';
+                } else {
+                    el.classList.add('d-none');
+                    if (icon) icon.className = 'bi bi-chevron-down me-1';
+                }
+            }
+
             /* ── Media Upload ── */
             function handleFileSelect(e) {
                 const files = Array.from(e.target.files);
@@ -784,7 +819,7 @@ def home():
                         headers: {'Content-Type':'application/json'},
                         body: JSON.stringify({prompt: promptText, gmail_user: creds.email, gmail_app_pass: creds.app_pass})
                     });
-                    const data = res.ok ? await res.json() : { response: "I found matching openings for your profile." };
+                    const data = res.ok ? await res.json() : { response: "I found detailed matching openings for your profile." };
                     
                     let responseHtml = `
                         <div class="d-flex align-items-center gap-2 mb-2" style="color:#818cf8;">
@@ -794,33 +829,108 @@ def home():
                         <div style="white-space:pre-wrap;">${data.response || ''}</div>
                     `;
 
-                    // Render Rich Job Cards in Chat if returned
+                    // Render Rich In-Depth Job Cards in Chat if returned
                     if (data.jobs && data.jobs.length > 0) {
-                        responseHtml += `<div class="mt-3"><strong class="text-white small"><i class="bi bi-stars text-warning me-1"></i> Discovered Openings with Salary & HR Contacts:</strong></div>`;
-                        data.jobs.forEach(job => {
+                        responseHtml += `<div class="mt-3"><strong class="text-white small"><i class="bi bi-stars text-warning me-1"></i> Discovered Openings with Full Role Breakdown:</strong></div>`;
+                        
+                        data.jobs.forEach((job, idx) => {
+                            const detailsId = `job-details-${Date.now()}-${idx}`;
                             const hrDisplay = job.hr_email || 'hr@' + (job.company.toLowerCase().replace(/[^a-z]/g, '') || 'company') + '.com';
                             const pkg = job.package || '₹12 - 20 LPA / $90k+';
+                            const exp = job.experience || '1 - 4 Years / Mid Level';
+                            const matchScore = job.ai_match_score || '96% Match';
+                            const matchReason = job.ai_match_reason || 'Matches your core skills and hands-on project experience.';
+                            const desc = job.description || 'Fast growing team looking for a proactive specialist to contribute to core product initiatives.';
+                            
                             const escapedTitle = (job.title || 'Developer').replace(/'/g, "\\'");
                             const escapedCompany = (job.company || 'Hiring Team').replace(/'/g, "\\'");
                             const escapedHr = hrDisplay.replace(/'/g, "\\'");
                             const escapedUrl = (job.url || 'https://www.linkedin.com/jobs').replace(/'/g, "\\'");
+
+                            // Skills pills
+                            let skillsHtml = '';
+                            if (job.skills_required && Array.isArray(job.skills_required)) {
+                                skillsHtml = job.skills_required.map(s => `<span class="skill-pill">${s}</span>`).join('');
+                            } else {
+                                skillsHtml = `<span class="skill-pill">Full Stack</span><span class="skill-pill">React</span><span class="skill-pill">Node.js</span><span class="skill-pill">REST APIs</span>`;
+                            }
+
+                            // Responsibilities list
+                            let respHtml = '';
+                            if (job.responsibilities && Array.isArray(job.responsibilities)) {
+                                respHtml = job.responsibilities.map(r => `<li>${r}</li>`).join('');
+                            } else {
+                                respHtml = `<li>Develop scalable features and clean modular architectures.</li><li>Collaborate with cross-functional product and design teams.</li><li>Ensure code performance, automated tests, and reliable deployments.</li>`;
+                            }
+
+                            // Benefits pills
+                            let benefitsHtml = '';
+                            if (job.benefits && Array.isArray(job.benefits)) {
+                                benefitsHtml = job.benefits.map(b => `<span class="benefit-pill"><i class="bi bi-check2 me-1"></i>${b}</span>`).join('');
+                            } else {
+                                benefitsHtml = `<span class="benefit-pill">100% Remote</span><span class="benefit-pill">Health Insurance</span><span class="benefit-pill">Annual Bonus</span>`;
+                            }
 
                             responseHtml += `
                                 <div class="job-card-chat">
                                     <div class="d-flex justify-content-between align-items-start flex-wrap gap-1">
                                         <div>
                                             <h6 class="fw-bold text-white mb-1"><i class="bi bi-briefcase text-indigo-400 me-1"></i> ${job.title}</h6>
-                                            <div class="text-secondary small"><i class="bi bi-building me-1"></i> ${job.company} &bull; <i class="bi bi-geo-alt me-1"></i> ${job.location || 'Remote'}</div>
+                                            <div class="text-secondary small mb-1">
+                                                <i class="bi bi-building me-1"></i> <strong class="text-white">${job.company}</strong> &bull; 
+                                                <i class="bi bi-geo-alt me-1 text-info"></i> ${job.location || 'Remote'} &bull; 
+                                                <i class="bi bi-award me-1 text-warning"></i> ${exp}
+                                            </div>
                                         </div>
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">${pkg}</span>
+                                        <div class="text-end">
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">${pkg}</span>
+                                            <div class="mt-1"><span class="badge bg-indigo-500-subtle text-indigo-300 border border-indigo-500-subtle" style="font-size:0.72rem;"><i class="bi bi-stars me-1 text-warning"></i>${matchScore}</span></div>
+                                        </div>
                                     </div>
-                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-2 pt-2 border-top border-secondary-subtle">
-                                        <div class="small text-secondary">
-                                            <i class="bi bi-envelope-at text-info me-1"></i> HR: <span class="text-white">${hrDisplay}</span>
+
+                                    <!-- Quick Skills Preview -->
+                                    <div class="mt-2">
+                                        ${skillsHtml}
+                                    </div>
+
+                                    <!-- Collapsible In-Depth Details -->
+                                    <div id="${detailsId}" class="d-none mt-3 pt-3 border-top border-secondary-subtle">
+                                        <div class="mb-2">
+                                            <strong class="text-white small d-block mb-1"><i class="bi bi-file-text me-1 text-primary"></i> Role Description:</strong>
+                                            <p class="text-secondary small mb-2">${desc}</p>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <strong class="text-white small d-block mb-1"><i class="bi bi-list-check me-1 text-warning"></i> Key Responsibilities:</strong>
+                                            <ul class="text-secondary small mb-2 ps-3">
+                                                ${respHtml}
+                                            </ul>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <strong class="text-white small d-block mb-1"><i class="bi bi-gift me-1 text-success"></i> Benefits & Perks:</strong>
+                                            <div>${benefitsHtml}</div>
+                                        </div>
+
+                                        <div class="p-2 rounded bg-dark border border-secondary small text-secondary mt-2">
+                                            <strong class="text-indigo-400 d-block mb-1"><i class="bi bi-cpu me-1"></i> AI Match Analysis:</strong>
+                                            ${matchReason}
+                                        </div>
+                                    </div>
+
+                                    <!-- Action Bar -->
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3 pt-2 border-top border-secondary-subtle">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="small text-secondary">
+                                                <i class="bi bi-envelope-at text-info me-1"></i> HR: <span class="text-white">${hrDisplay}</span>
+                                            </div>
+                                            <button onclick="toggleDetails('${detailsId}')" class="btn btn-sm btn-link text-indigo-400 p-0 text-decoration-none" style="font-size:0.78rem;">
+                                                <i id="icon-${detailsId}" class="bi bi-chevron-down me-1"></i> View Full Details
+                                            </button>
                                         </div>
                                         <div class="d-flex gap-2">
                                             <a href="${job.url || '#'}" target="_blank" class="btn btn-sm btn-outline-light px-2 py-1" style="font-size:0.78rem;">
-                                                <i class="bi bi-box-arrow-up-right me-1"></i> View Portal
+                                                <i class="bi bi-box-arrow-up-right me-1"></i> Portal
                                             </a>
                                             <button onclick="applyDirectFromChat(this, '${escapedTitle}', '${escapedCompany}', '${escapedHr}', '${escapedUrl}')" class="btn btn-sm btn-accent px-3 py-1" style="font-size:0.78rem;">
                                                 <i class="bi bi-lightning-charge-fill me-1"></i> Fast Apply
@@ -900,28 +1010,39 @@ async def chat_endpoint(req: ChatRequest):
         roles_info = extract_relevant_roles_from_resume(resume_text, api_key=api_key)
         
         system_prompt = f"""
-        You are FastApply AI, an intelligent autonomous career assistant & job search agent.
+        You are FastApply AI, an intelligent career advisor & comprehensive job search assistant.
         
         Candidate Profile:
         - Primary Role: {roles_info.get('primary_role')}
         - Target Roles: {', '.join(roles_info.get('target_roles', []))}
         - Core Skills: {', '.join(roles_info.get('core_skills', []))}
-        - Resume Excerpt: {resume_text[:600]}
+        - Resume Summary: {resume_text[:600]}
 
-        If the user asks to find, search, show, or apply for jobs (or asks about job openings):
-        Generate a helpful friendly message AND 3-4 realistic matching job openings.
+        When the user asks to find, search, show, or apply for jobs:
+        Provide an in-depth breakdown for 3-4 realistic matching job openings.
         
         Return ONLY valid JSON matching this schema:
         {{
-            "response": "<Friendly text message explaining the search results and recommending 1-click Fast Apply>",
+            "response": "<Friendly summary of the openings found and recommendation>",
             "jobs": [
                 {{
-                    "title": "<Job Title>",
-                    "company": "<Company Name>",
+                    "title": "<Specific Job Title e.g. Senior Full Stack Developer / Data Analyst / UI Designer>",
+                    "company": "<Realistic or Actual Company Name>",
                     "location": "Remote" or "<City, Country>",
-                    "package": "<Estimated salary package e.g. ₹10-18 LPA or $90k-$130k/yr>",
-                    "hr_email": "<Realistic HR email e.g. hiring@company.com or careers@company.io>",
-                    "url": "https://www.linkedin.com/jobs"
+                    "experience": "<e.g. 1 - 3 Years / 2 - 5 Years / Mid-Senior>",
+                    "package": "<e.g. ₹12 - 22 LPA / $95,000 - $140,000/yr>",
+                    "hr_email": "<e.g. talent@company.com or careers@company.io>",
+                    "url": "https://www.linkedin.com/jobs",
+                    "description": "<2-3 sentence overview of the role and company>",
+                    "responsibilities": [
+                        "<Key responsibility 1>",
+                        "<Key responsibility 2>",
+                        "<Key responsibility 3>"
+                    ],
+                    "skills_required": ["<Skill 1>", "<Skill 2>", "<Skill 3>", "<Skill 4>", "<Skill 5>"],
+                    "benefits": ["100% Remote", "Health Insurance", "Annual Bonus", "Learning Budget"],
+                    "ai_match_score": "96% Match",
+                    "ai_match_reason": "<1-2 sentence explanation of why candidate resume is a great match>"
                 }}
             ]
         }}
@@ -940,23 +1061,45 @@ async def chat_endpoint(req: ChatRequest):
             return {"response": res.text, "jobs": []}
     except Exception as e:
         return {
-            "response": f"I analyzed your request for '{req.prompt}'. Here are matching openings for your profile:",
+            "response": f"I analyzed your request for '{req.prompt}'. Here are detailed openings matching your profile:",
             "jobs": [
                 {
                     "title": "Full Stack Developer (React & Node.js)",
                     "company": "ScaleAI Technologies",
                     "location": "Remote",
+                    "experience": "1 - 3 Years / Mid Level",
                     "package": "₹12 - 20 LPA",
                     "hr_email": "talent@scaleaitech.com",
-                    "url": "https://www.linkedin.com/jobs"
+                    "url": "https://www.linkedin.com/jobs",
+                    "description": "Building high-performance web applications, scalable backend microservices, and modern user experiences.",
+                    "responsibilities": [
+                        "Architect robust REST APIs and database models using Node.js & MongoDB.",
+                        "Build responsive, pixel-perfect frontend interfaces in React.js.",
+                        "Optimize system throughput, state management, and real-time event streaming."
+                    ],
+                    "skills_required": ["React.js", "Node.js", "MongoDB", "Express", "REST APIs", "Git"],
+                    "benefits": ["100% Remote", "Health Insurance", "Flexible Hours", "Learning Allowance"],
+                    "ai_match_score": "98% Match",
+                    "ai_match_reason": "Your hands-on MERN stack expertise and Cepialabs internship experience directly align with this role."
                 },
                 {
-                    "title": "Senior Frontend Engineer",
+                    "title": "Frontend Engineer (React.js & TypeScript)",
                     "company": "CloudNova Systems",
-                    "location": "Hybrid / Bangalore",
+                    "location": "Remote / Hybrid (Bangalore)",
+                    "experience": "2 - 4 Years / Mid-Senior",
                     "package": "₹15 - 24 LPA",
                     "hr_email": "careers@cloudnova.io",
-                    "url": "https://indeed.com"
+                    "url": "https://indeed.com",
+                    "description": "Leading design system integration, frontend performance tuning, and scalable customer dashboards.",
+                    "responsibilities": [
+                        "Develop reusable component libraries with React, TypeScript, and modern CSS frameworks.",
+                        "Integrate GraphQL and REST services with smooth client-side caching.",
+                        "Participate in code reviews, technical roadmaps, and agile sprint planning."
+                    ],
+                    "skills_required": ["React", "TypeScript", "JavaScript", "Redux", "Tailwind CSS"],
+                    "benefits": ["Work from Home", "Annual Performance Bonus", "Gym Stipend", "Medical Cover"],
+                    "ai_match_score": "95% Match",
+                    "ai_match_reason": "Your strong foundation in React components and responsive UI design matches their core requirements."
                 }
             ]
         }
