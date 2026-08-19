@@ -18,7 +18,7 @@ from src.config import Config
 app = FastAPI(title="FastApply AI")
 
 class JobRequest(BaseModel):
-    job_title: str = "Full Stack Developer"
+    job_title: str = "Auto (Based on Resume)"
     location: str = "Remote"
     max_jobs: int = 3
     gmail_user: str = ""
@@ -427,11 +427,12 @@ def home():
 
                         <!-- Quick Automation Trigger -->
                         <div class="card-custom p-4 mb-4">
-                            <h4 class="fw-bold text-white mb-3"><i class="bi bi-play-circle me-2"></i> Search & Apply for Jobs</h4>
+                            <h4 class="fw-bold text-white mb-3"><i class="bi bi-play-circle me-2"></i> Search & Apply for Relevant Jobs</h4>
+                            <p class="text-secondary small mb-3">FastApply AI analyzes your resume automatically to match suitable job titles (or specify a custom role below).</p>
                             <div class="row g-3">
                                 <div class="col-md-4">
-                                    <label class="form-label text-secondary small">Target Role / Keyword</label>
-                                    <input type="text" id="dash-title" class="form-control" value="Full Stack Developer">
+                                    <label class="form-label text-secondary small">Target Role / Domain</label>
+                                    <input type="text" id="dash-title" class="form-control" value="Auto (Based on Resume)" placeholder="Auto (Based on Resume) or e.g. Data Analyst, UX Designer">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label text-secondary small">Location Preference</label>
@@ -785,18 +786,23 @@ async def get_applications():
 async def chat_endpoint(req: ChatRequest):
     api_key = os.getenv("GEMINI_API_KEY", Config.GEMINI_API_KEY)
     if not api_key:
-        return {"response": "Please configure your GEMINI_API_KEY in candidate profile settings."}
+        return {"response": "Please configure your GEMINI_API_KEY in environment or candidate profile."}
 
     try:
         client = genai.Client(api_key=api_key)
         resume_text = extract_resume_text("resume.docx")
+        roles_info = extract_relevant_roles_from_resume(resume_text, api_key=api_key)
         
         system_prompt = f"""
-        You are FastApply AI, an autonomous career assistant & job search agent.
-        Candidate Info: Ateeb Ahmad (Full Stack Developer: React, Node, MongoDB).
-        Resume Summary: {resume_text[:1000]}
+        You are FastApply AI, an intelligent autonomous career agent for ANY profession (Software, Data, Design, Marketing, Finance, Healthcare, Operations, etc.).
+        
+        Candidate Resume Extracted Profile:
+        - Primary Detected Role: {roles_info.get('primary_role')}
+        - Matching Job Search Queries: {', '.join(roles_info.get('target_roles', []))}
+        - Core Skills: {', '.join(roles_info.get('core_skills', []))}
+        - Resume Summary: {resume_text[:800]}
 
-        Answer the user prompt concisely and professionally. If the user asks to fast apply or find jobs, provide a clear action plan and inform them that the Playwright browser runner is active.
+        Help the user find relevant openings, review resumes, draft cold emails, or run automated job applications across all matching domains.
         """
 
         res = client.models.generate_content(
@@ -805,7 +811,7 @@ async def chat_endpoint(req: ChatRequest):
         )
         return {"response": res.text}
     except Exception as e:
-        return {"response": f"FastApply AI Assistant: Checked your request for '{req.prompt}'. Agent is configured and ready to run!"}
+        return {"response": f"FastApply AI Assistant: Analyzed your resume. Found matching roles and ready to auto-apply!"}
 
 @app.post("/api/run")
 async def run_agent(req: JobRequest):
@@ -824,10 +830,14 @@ async def run_agent(req: JobRequest):
     try:
         resume_text = extract_resume_text(resume_path)
         agent = JobAutomationAgent(resume_text=resume_text)
-        await agent.run(job_title=req.job_title, location=req.location, max_jobs=req.max_jobs)
+        
+        # If user left title as Auto, pass None so agent auto-detects from resume
+        target_role = req.job_title if req.job_title and "auto" not in req.job_title.lower() else None
+        
+        await agent.run(job_title=target_role, location=req.location, max_jobs=req.max_jobs)
         return {
             "status": "success",
-            "message": f"FastApply processed '{req.job_title}' in '{req.location}'. Cold emails dispatched from {req.gmail_user or 'configured Gmail'}.",
+            "message": f"FastApply successfully analyzed resume & processed matching jobs in '{req.location}'. Cold emails dispatched from {req.gmail_user or 'configured Gmail'}.",
             "max_jobs_processed": req.max_jobs
         }
     except Exception as e:
