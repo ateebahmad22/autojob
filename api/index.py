@@ -442,10 +442,10 @@ def home():
                     </div>
 
                     <!-- Saved Search Workflows / Chat History List (ChatGPT Style) -->
-                    <div class="mt-3 flex-grow-1 overflow-auto pe-1" style="min-height: 120px;">
+                    <div class="mt-3 flex-grow-1 overflow-auto pe-1" style="min-height: 140px;">
                         <div class="d-flex align-items-center justify-content-between px-2 mb-2 text-secondary" style="font-size: 0.72rem; letter-spacing: 0.5px; text-transform: uppercase;">
-                            <span>Saved Workflows</span>
-                            <i class="bi bi-clock-history"></i>
+                            <span><i class="bi bi-folder2-open me-1 text-warning"></i> Saved Workflows</span>
+                            <span class="badge bg-dark border border-secondary text-secondary" id="history-count" style="font-size:0.65rem;">0</span>
                         </div>
                         <div id="sidebar-chat-history" class="d-flex flex-column gap-1">
                             <!-- Dynamically loaded chat workflow sessions -->
@@ -724,31 +724,41 @@ def home():
 
             function renderSidebarChatHistory() {
                 const container = document.getElementById('sidebar-chat-history');
+                const countBadge = document.getElementById('history-count');
                 if (!container) return;
                 const keys = Object.keys(chatSessions);
+                if (countBadge) countBadge.textContent = keys.length;
+
                 if (keys.length === 0) {
-                    container.innerHTML = '<div class="text-secondary small px-2">No past searches yet</div>';
+                    container.innerHTML = '<div class="text-secondary small px-2 py-1" style="font-size:0.78rem;">No saved workflows yet. Search jobs in chat to auto-save!</div>';
                     return;
                 }
 
                 container.innerHTML = keys.map(k => {
                     const sess = chatSessions[k];
-                    const isActive = k === currentChatId ? 'active' : '';
+                    const isActive = k === currentChatId;
+                    const activeClass = isActive ? 'active border-start border-3 border-indigo-500' : '';
                     const title = sess.title || 'Job Search Workflow';
+                    const msgCount = (sess.messages && sess.messages.length) ? Math.floor(sess.messages.length / 2) : 0;
+                    const countBadgeHtml = msgCount > 0 ? `<span class="badge bg-secondary-subtle text-secondary" style="font-size:0.65rem;">${msgCount}</span>` : '';
+
                     return `
-                        <div onclick="loadChatSession('${k}')" class="history-item ${isActive}" title="${title}">
-                            <div class="d-flex align-items-center gap-2 text-truncate">
-                                <i class="bi bi-chat-text text-secondary" style="font-size:0.78rem;"></i>
-                                <span class="text-truncate">${title}</span>
+                        <div onclick="loadChatSession('${k}')" class="history-item ${activeClass} d-flex align-items-center justify-content-between py-2 px-2 rounded-2" style="${isActive ? 'background:#2d2e38;color:#fff;' : 'background:#212226;'}" title="${title}">
+                            <div class="d-flex align-items-center gap-2 text-truncate me-1" style="cursor:pointer;">
+                                <i class="bi bi-chat-left-dots text-indigo-400" style="font-size:0.8rem;"></i>
+                                <span class="text-truncate fw-medium" style="font-size:0.82rem;">${title}</span>
                             </div>
-                            <span class="del-btn" onclick="deleteChatSession('${k}', event)" title="Delete Workflow">&times;</span>
+                            <div class="d-flex align-items-center gap-1">
+                                ${countBadgeHtml}
+                                <span class="del-btn px-1" onclick="deleteChatSession('${k}', event)" title="Delete Workflow" style="font-size:1.1rem;line-height:1;cursor:pointer;">&times;</span>
+                            </div>
                         </div>
                     `;
                 }).join('');
 
                 const header = document.getElementById('chat-title-header');
                 if (header && chatSessions[currentChatId]) {
-                    header.textContent = chatSessions[currentChatId].title || 'Active Job Workflow';
+                    header.innerHTML = `<i class="bi bi-folder-check text-warning me-1"></i> Workflow: <strong class="text-white">${chatSessions[currentChatId].title || 'Active Job Workflow'}</strong>`;
                 }
             }
 
