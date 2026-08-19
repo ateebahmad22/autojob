@@ -299,6 +299,9 @@ def home():
                         <a onclick="switchTab('profile')" id="nav-profile" class="nav-link-custom">
                             <i class="bi bi-person-gear"></i> Candidate Profile
                         </a>
+                        <a onclick="doLogout()" id="nav-signout" class="nav-link-custom mt-auto" style="color:#f87171;">
+                            <i class="bi bi-box-arrow-left"></i> Sign Out
+                        </a>
                     </div>
 
                     <!-- User Footer -->
@@ -459,20 +462,12 @@ def home():
                     <div id="tab-profile" class="d-none p-4 p-md-5 flex-grow-1">
                         <h2 class="fw-bold text-white mb-4"><i class="bi bi-person-gear me-2"></i> Candidate Profile</h2>
                         <div class="row g-4">
-                            <div class="col-md-6">
+                            <div class="col-md-8 mx-auto">
                                 <div class="card-custom p-4">
                                     <h4 class="fw-bold text-white mb-3">Resume & Info</h4>
                                     <div class="mb-3"><label class="form-label text-secondary small">Name</label><input type="text" class="form-control" value="Ateeb Ahmad" readonly></div>
                                     <div class="mb-3"><label class="form-label text-secondary small">Email</label><input type="text" class="form-control" value="ateebahmad298@gmail.com" readonly></div>
                                     <div class="mb-3"><label class="form-label text-secondary small">Resume</label><input type="text" class="form-control" value="resume.docx (Loaded)" readonly></div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card-custom p-4">
-                                    <h4 class="fw-bold text-white mb-3">API Services</h4>
-                                    <div class="mb-3"><label class="form-label text-secondary small">Gemini API Key</label><input type="password" class="form-control" value="configured" readonly></div>
-                                    <div class="mb-3"><label class="form-label text-secondary small">Gmail App Password</label><input type="password" class="form-control" value="configured" readonly></div>
-                                    <div class="mb-3"><label class="form-label text-secondary small">Browserless Token</label><input type="password" class="form-control" value="configured" readonly></div>
                                 </div>
                             </div>
                         </div>
