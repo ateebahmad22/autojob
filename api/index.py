@@ -716,10 +716,10 @@ def home():
                 document.getElementById('attach-preview').innerHTML = '';
                 container.scrollTop = container.scrollHeight;
 
-                // AI thinking bubble
+                // AI processing bubble
                 const aiDiv = document.createElement('div');
                 aiDiv.className = 'chat-bubble-ai';
-                aiDiv.innerHTML = `<div class="text-secondary"><span class="spinner-border spinner-border-sm me-2 text-indigo-400"></span> FastApply AI is thinking...</div>`;
+                aiDiv.innerHTML = `<div class="text-secondary d-flex align-items-center gap-2"><span class="spinner-border spinner-border-sm text-indigo-400"></span> <span class="fw-semibold">Working...</span></div>`;
                 container.appendChild(aiDiv);
                 container.scrollTop = container.scrollHeight;
 
@@ -742,8 +742,11 @@ def home():
             /* ── Dashboard Agent Trigger ── */
             async function runAgentFromDash() {
                 const btn = document.getElementById('dashRunBtn');
+                const engineStat = document.getElementById('stat-engine');
                 btn.disabled = true;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Scraping & Applying...';
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Working...';
+                if (engineStat) engineStat.innerHTML = '<span class="text-warning"><span class="spinner-border spinner-border-sm me-1"></span> Working...</span>';
+
                 try {
                     const creds = getUserCreds();
                     const title = document.getElementById('dash-title').value;
@@ -762,6 +765,7 @@ def home():
                 } finally { 
                     btn.disabled=false; 
                     btn.innerHTML='<i class="bi bi-lightning-charge me-2"></i> Fast Apply Now'; 
+                    if (engineStat) engineStat.innerHTML = '<span class="text-success">Live & Ready</span>';
                 }
             }
         </script>
