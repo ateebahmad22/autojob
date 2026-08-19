@@ -699,9 +699,11 @@ def home():
             function loadChatSession(chatId) {
                 if (chatSessions[chatId]) {
                     currentChatId = chatId;
+                    switchTab('chat');
                     renderChatSessionMessages();
                     renderSidebarChatHistory();
-                    switchTab('chat');
+                    const container = document.getElementById('chat-messages');
+                    if (container) container.scrollTop = container.scrollHeight;
                 }
             }
 
