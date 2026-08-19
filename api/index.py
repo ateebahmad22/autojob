@@ -356,15 +356,18 @@ def home():
                         </a>
                     </div>
 
-                    <!-- User Footer -->
-                    <div class="pt-3 border-top border-secondary-subtle d-flex align-items-center px-1">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold" style="width:36px;height:36px;background:#6366f1;" id="avatar-initials">AA</div>
-                            <div>
-                                <div class="fw-bold text-white small" id="sidebar-user-name">Candidate</div>
-                                <div class="text-secondary" style="font-size:.72rem;">Verified User</div>
+                    <!-- User Footer with Exit/Signout Button -->
+                    <div class="pt-3 border-top border-secondary-subtle d-flex align-items-center justify-content-between px-1">
+                        <div class="d-flex align-items-center gap-2 overflow-hidden me-2" style="max-width: 140px;">
+                            <div class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:34px;height:34px;background:#6366f1;font-size:0.85rem;" id="avatar-initials">AA</div>
+                            <div class="text-truncate">
+                                <div class="fw-bold text-white small text-truncate" id="sidebar-user-name" title="Candidate">ateebahmad298</div>
+                                <div class="text-secondary micro" style="font-size:.7rem;">Active User</div>
                             </div>
                         </div>
+                        <button onclick="doLogout()" class="btn btn-sm btn-link text-danger p-0 text-decoration-none" title="Sign Out & Return to Landing Page" style="font-size: 1.25rem; line-height: 1;">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </button>
                     </div>
                 </div>
 
