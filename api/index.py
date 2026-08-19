@@ -256,10 +256,76 @@ def home():
     </head>
     <body>
 
-        <!-- ═══════════ AUTH SCREENS ═══════════ -->
+        <!-- ═══════════ SCREEN 1: LANDING PAGE ═══════════ -->
+        <div id="page-landing" class="min-vh-100 d-flex flex-column">
+            <!-- Landing Top Navbar -->
+            <nav class="border-bottom border-secondary-subtle py-3 px-4 px-md-5 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-lightning-charge-fill text-warning fs-3"></i>
+                    <span class="fw-bold fs-4 text-white">FastApply AI</span>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <button onclick="showPage('login')" class="btn btn-outline-light btn-sm px-4 rounded-pill">Sign In</button>
+                    <button onclick="showPage('signup')" class="btn btn-accent btn-sm px-4 rounded-pill">Get Started Free</button>
+                </div>
+            </nav>
 
-        <!-- LOGIN PAGE -->
-        <div id="page-login" class="auth-page">
+            <!-- Hero Section -->
+            <div class="flex-grow-1 d-flex align-items-center justify-content-center p-4 p-md-5">
+                <div class="text-center mx-auto" style="max-width: 860px;">
+                    <span class="badge rounded-pill px-3 py-2 mb-3" style="color:#818cf8; border:1px solid #4338ca; background: rgba(99, 102, 241, 0.1);">
+                        ⚡ Autonomous AI Job Application & HR Cold Mailer Platform
+                    </span>
+                    <h1 class="display-4 fw-extrabold mb-4 text-white" style="line-height: 1.2;">
+                        Land Your Dream Job 10x Faster with <span style="color:#818cf8;">FastApply AI</span>
+                    </h1>
+                    <p class="lead text-secondary mb-5 mx-auto" style="max-width: 700px;">
+                        FastApply AI analyzes your resume, discovers matching live job openings, extracts recruiter contacts, writes hyper-personalized cold emails using Gemini 3.6 AI, and dispatches them straight from your personal Gmail.
+                    </p>
+                    <div class="d-flex justify-content-center gap-3 flex-wrap mb-5">
+                        <button onclick="showPage('signup')" class="btn btn-accent btn-lg px-4 py-3 shadow">
+                            <i class="bi bi-rocket-takeoff me-2"></i> Start Auto Applying Free
+                        </button>
+                        <button onclick="showPage('login')" class="btn btn-outline-light btn-lg px-4 py-3">
+                            <i class="bi bi-box-arrow-in-right me-2"></i> Sign In to Dashboard
+                        </button>
+                    </div>
+
+                    <!-- Features Row -->
+                    <div class="row g-4 mt-2 text-start">
+                        <div class="col-md-4">
+                            <div class="card-custom p-4 h-100">
+                                <i class="bi bi-file-earmark-person fs-1 mb-3" style="color:#818cf8;"></i>
+                                <h5 class="fw-bold text-white mb-2">Smart Resume Matcher</h5>
+                                <p class="text-secondary small mb-0">Analyzes candidate experience, tech stack, and matches target openings automatically.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card-custom p-4 h-100">
+                                <i class="bi bi-cpu fs-1 text-success mb-3"></i>
+                                <h5 class="fw-bold text-white mb-2">Gemini 3.6 Flash AI</h5>
+                                <p class="text-secondary small mb-0">Crafts tailored, high-converting cold emails matching company requirements.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card-custom p-4 h-100">
+                                <i class="bi bi-send-check fs-1 text-info mb-3"></i>
+                                <h5 class="fw-bold text-white mb-2">1-Click Direct Apply</h5>
+                                <p class="text-secondary small mb-0">Dispatches emails directly from your Gmail with real-time SQLite analytics tracking.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Landing Footer -->
+            <footer class="border-top border-secondary-subtle py-3 text-center text-secondary small">
+                &copy; 2026 FastApply AI. Built with Google Gemini AI & Vercel Cloud Serverless.
+            </footer>
+        </div>
+
+        <!-- ═══════════ SCREEN 2: LOGIN PAGE ═══════════ -->
+        <div id="page-login" class="auth-page d-none">
             <div class="auth-card text-center">
                 <div class="mb-4">
                     <i class="bi bi-lightning-charge-fill text-warning fs-1"></i>
@@ -284,13 +350,14 @@ def home():
                         <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
                     </button>
                 </form>
-                <div class="mt-4 text-secondary small">
-                    Don't have an account? <a href="#" onclick="showPage('signup')" class="text-decoration-none" style="color:#818cf8;">Create Account</a>
+                <div class="mt-4 d-flex justify-content-between text-secondary small">
+                    <a href="#" onclick="showPage('landing')" class="text-secondary text-decoration-none"><i class="bi bi-arrow-left me-1"></i> Back to Home</a>
+                    <div>Don't have an account? <a href="#" onclick="showPage('signup')" class="text-decoration-none" style="color:#818cf8;">Create Account</a></div>
                 </div>
             </div>
         </div>
 
-        <!-- SIGNUP PAGE -->
+        <!-- ═══════════ SCREEN 3: SIGNUP PAGE ═══════════ -->
         <div id="page-signup" class="auth-page d-none">
             <div class="auth-card text-center">
                 <div class="mb-4">
@@ -326,18 +393,19 @@ def home():
                         <i class="bi bi-person-plus me-2"></i> Create Account
                     </button>
                 </form>
-                <div class="mt-4 text-secondary small">
-                    Already have an account? <a href="#" onclick="showPage('login')" class="text-decoration-none" style="color:#818cf8;">Sign In</a>
+                <div class="mt-4 d-flex justify-content-between text-secondary small">
+                    <a href="#" onclick="showPage('landing')" class="text-secondary text-decoration-none"><i class="bi bi-arrow-left me-1"></i> Back to Home</a>
+                    <div>Already have an account? <a href="#" onclick="showPage('login')" class="text-decoration-none" style="color:#818cf8;">Sign In</a></div>
                 </div>
             </div>
         </div>
 
-        <!-- ═══════════ MAIN APP ═══════════ -->
+        <!-- ═══════════ SCREEN 4: MAIN APP DASHBOARD ═══════════ -->
         <div id="page-app" class="d-none">
         <div class="container-fluid p-0">
             <div class="row g-0">
 
-                <!-- Left Sidebar (Clean 3-Tab Nav) -->
+                <!-- Left Sidebar (Clean 3-Tab Nav with Exit/Signout) -->
                 <div class="col-md-3 col-lg-2 sidebar p-3 d-flex flex-column">
                     <div class="d-flex align-items-center gap-2 mb-4 px-2">
                         <i class="bi bi-lightning-charge-fill text-warning fs-3"></i>
@@ -365,7 +433,7 @@ def home():
                                 <div class="text-secondary micro" style="font-size:.7rem;">Active User</div>
                             </div>
                         </div>
-                        <button onclick="doLogout()" class="btn btn-sm btn-link text-danger p-0 text-decoration-none" title="Sign Out & Return to Landing Page" style="font-size: 1.25rem; line-height: 1;">
+                        <button type="button" onclick="doLogout()" class="btn btn-sm btn-link text-danger p-0 text-decoration-none" title="Sign Out & Return to Landing Page" style="font-size: 1.35rem; line-height: 1; cursor: pointer;">
                             <i class="bi bi-box-arrow-right"></i>
                         </button>
                     </div>
@@ -557,12 +625,14 @@ def home():
             let attachedFiles = [];
             let allApplications = [];
 
-            /* ── Auth ── */
+            /* ── Auth & Navigation ── */
             function showPage(p) {
-                ['login','signup','app'].forEach(id => {
-                    document.getElementById('page-'+id).classList.toggle('d-none', id !== p);
+                ['landing','login','signup','app'].forEach(id => {
+                    const el = document.getElementById('page-'+id);
+                    if (el) el.classList.toggle('d-none', id !== p);
                 });
             }
+
             function doLogin(e) {
                 e.preventDefault();
                 const email = document.getElementById('login-email').value;
@@ -571,6 +641,7 @@ def home():
                 localStorage.setItem('fa_user', JSON.stringify({name, email, app_pass}));
                 enterApp(name, email);
             }
+
             function doSignup(e) {
                 e.preventDefault();
                 const p1 = document.getElementById('signup-pass').value;
@@ -582,27 +653,40 @@ def home():
                 localStorage.setItem('fa_user', JSON.stringify({name, email, app_pass}));
                 enterApp(name, email);
             }
+
             function doLogout() {
                 localStorage.removeItem('fa_user');
-                showPage('login');
+                showPage('landing');
             }
+
             function enterApp(name, email) {
-                const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+                const initials = (name || email || 'AA').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
                 document.getElementById('avatar-initials').textContent = initials || 'AA';
-                document.getElementById('sidebar-user-name').textContent = name || 'Candidate';
+                document.getElementById('sidebar-user-name').textContent = email || name || 'ateebahmad298';
                 document.getElementById('profile-name-input').value = name || 'Candidate';
                 document.getElementById('profile-email-input').value = email || 'ateebahmad298@gmail.com';
                 showPage('app');
                 switchTab('chat');
                 loadRealApplications();
             }
+
             function getUserCreds() {
                 try { return JSON.parse(localStorage.getItem('fa_user')) || {}; } catch(e) { return {}; }
             }
-            // Auto-login if session exists
+
+            // Check auto-login on revisit, otherwise show landing page
             (function(){
                 const u = localStorage.getItem('fa_user');
-                if (u) { const d = JSON.parse(u); enterApp(d.name, d.email); }
+                if (u) { 
+                    try {
+                        const d = JSON.parse(u); 
+                        if (d && (d.email || d.name)) {
+                            enterApp(d.name, d.email); 
+                            return;
+                        }
+                    } catch(e) {}
+                }
+                showPage('landing');
             })();
 
             /* ── Tabs ── */
